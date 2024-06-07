@@ -7,14 +7,8 @@ const bodyParser = require('body-parser')
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcrypt");
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
-const fileUpload = require('express-fileupload')
-const uploadOpts = {
-  useTempFiles: true,
-  tempFileDir: '/tmp'
-}
 
-const xlsx = require('xlsx')
-const fs = require('fs')
+
 dotenv.config({path: './db.env'})
 
 const app = express();
@@ -25,10 +19,6 @@ app.use(bodyParser.json());
 app.use(cors());
 
 const port = process.env.PORT || 3000;
-
-// Configurar multer para manejar múltiples archivos
-const storage = multer.memoryStorage();
-const upload = multer();
 
 const dbConfig = {
   host: process.env.host,
@@ -47,44 +37,6 @@ connection.connect((err) => {
   console.log("Conexión a la base de datos exitosa");
 });
 
-
-//Subir base de datos desde excel
-//Subir base de datos desde excel
-app.post('/upload/database', fileUpload(uploadOpts), async (req, res) => {
-  try {
-    const { excel } = req.files;
-    if (excel.mimetype !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-      fs.unlinkSync(excel.tempFilePath);
-      return res.status(400).json({ msg: 'File is invalid' });
-    }
-
-    const workbook = xlsx.readFile(excel.tempFilePath);
-    const sheetName = workbook.SheetNames[0];
-    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      const query = 'INSERT INTO tu_tabla (columna1, columna2, columna3) VALUES (?, ?, ?)';
-      const values = [row.columna1, row.columna2, row.columna3]; // Reemplaza 'columna1', 'columna2', etc. con los nombres reales de las columnas en tu archivo Excel
-
-      await new Promise((resolve, reject) => {
-        connection.query(query, values, (err, results) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(results);
-        });
-      });
-    }
-
-    fs.unlinkSync(excel.tempFilePath); // Eliminar el archivo temporal después de procesarlo
-    res.status(200).json({ msg: 'Database updated successfully' });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
 
 // Registro de administradores
 app.post('/register/admin', async (req, res) => {
