@@ -108,6 +108,12 @@ app.get('/inventory/:username', (req, res) => {
     if (err) return res.status(500).send(err);
     connection.query(`SELECT * FROM ${userTableName}`, (err, results) => {
       connection.release();
+      const userTableName = `inventory_${username}`;
+
+  connection.query(`SELECT * FROM ${userTableName}`, (err, results) => {
+    if (err) return res.status(500).send(err);
+    res.status(200).json(results);
+  });
       if (err) return res.status(500).send(err);
       res.status(200).json(results);
     });
