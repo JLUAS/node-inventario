@@ -103,19 +103,17 @@ app.post('/admin', (req, res) => {
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const userTableName = `inventory_${username}`;
-
+  const sql = `SELECT item_name, quantity FROM ${userTableName}`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query(`SELECT * FROM ${userTableName}`, (err, results) => {
+    connection.query(sql, (err, results) => {
       connection.release();
-      const userTableName = `inventory_${username}`;
-
-  connection.query(`SELECT * FROM ${userTableName}`, (err, results) => {
-    if (err) return res.status(500).send(err);
-    res.status(200).json(results);
-  });
-      if (err) return res.status(500).send(err);
-      res.status(200).json(results);
+      if (err) {
+        console.error("Error al obtener datos de la base de datos: ", err);
+        res.status(500).send({ error: "Error al obtener datos de la base de datos" });
+      } else {
+        res.send(results);
+      }
     });
   });
 });
@@ -125,7 +123,6 @@ app.post('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const { item_name, quantity } = req.body;
   const userTableName = `inventory_${username}`;
-
   pool.getConnection((err, connection) => {
     connection.query(`INSERT INTO ${userTableName} (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
       connection.release();
@@ -164,7 +161,9 @@ app.delete('/inventory/:id', authenticateToken, (req, res) => {
 
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
-  const sql = "SELECT id, username, role FROM users";
+  const username = req.params.username;
+  const userTableName = `inventory_${username}`;
+  const sql = `SELECT item_name, quantity FROM ${userTableName}`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
     connection.query(sql, (err, results) => {
