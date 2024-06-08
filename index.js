@@ -121,17 +121,10 @@ app.post('/inventory/:username', (req, res) => {
   const userTableName = `inventory_${username}`;
 
   pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query(`CREATE TABLE IF NOT EXISTS ${userTableName} LIKE inventories`, (err) => {
-      if (err) {
-        connection.release();
-        return res.status(500).send(err);
-      }
-      connection.query(`INSERT INTO ${userTableName} (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
-        connection.release();
-        if (err) return res.status(500).send(err);
-        res.status(201).send('Item added to inventory');
-      });
+    connection.query(`INSERT INTO ${userTableName} (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
+      connection.release();
+      if (err) return res.status(500).send(err);
+      res.status(201).send('Item added to inventory');
     });
   });
 });
