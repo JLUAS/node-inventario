@@ -5,7 +5,7 @@ const mysql = require('mysql');
 const dotenv = require("dotenv");
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
 
 dotenv.config({ path: './db.env' });
