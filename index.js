@@ -99,6 +99,23 @@ app.post('/admin', (req, res) => {
   });
 });
 
+//Obtener inventario general
+app.get('/inventory/main', (req, res) => {
+  const sql = `SELECT item_name, quantity FROM inventories`;
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+    connection.query(sql, (err, results) => {
+      connection.release();
+      if (err) {
+        console.error("Error al obtener datos de la base de datos principal: ", err);
+        res.status(500).send({ error: "Error al obtener datos de la base de datos" });
+      } else {
+        res.send(results);
+      }
+    });
+  });
+});
+
 //Obtener inventario por usuario
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
