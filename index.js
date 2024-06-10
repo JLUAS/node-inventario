@@ -161,9 +161,7 @@ app.delete('/inventory/:id', authenticateToken, (req, res) => {
 
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
-  const username = req.params.username;
-  const userTableName = `inventory_${username}`;
-  const sql = `SELECT item_name, quantity FROM ${userTableName}`;
+  const sql = `SELECT users, role FROM users`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
     connection.query(sql, (err, results) => {
