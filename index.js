@@ -135,7 +135,7 @@ app.get('/inventory/:username', (req, res) => {
   });
 });
 
-//Agregar item a usuario
+//Agregar item a tabla de usuario
 app.post('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const { item_name, quantity } = req.body;
@@ -152,14 +152,28 @@ app.post('/inventory/:username', (req, res) => {
 //Agregar item a base principal
 app.post('/inventory/admin', (req, res) => {
   const { item_name, quantity } = req.body;
+
+  if (!item_name || !quantity) {
+    return res.status(400).send('Item name and quantity are required');
+  }
+
   pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error getting connection:', err);
+      return res.status(500).send('Error getting connection');
+    }
+
     connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
       connection.release();
-      if (err) return res.status(500).send(err);
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
       res.status(201).send('Item added to inventory');
     });
   });
 });
+
 
 app.put('/inventory/:id', authenticateToken, (req, res) => {
   const { item_name, quantity } = req.body;
