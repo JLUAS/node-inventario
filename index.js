@@ -150,7 +150,7 @@ app.post('/inventory/:username', (req, res) => {
 });
 
 //Agregar item a base principal
-app.post('/inventory/main', (req, res) => {
+app.post('/inventory', (req, res) => {
   const { item_name, quantity } = req.body;
 
   pool.getConnection((err, connection) => {
