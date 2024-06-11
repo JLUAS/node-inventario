@@ -149,6 +149,18 @@ app.post('/inventory/:username', (req, res) => {
   });
 });
 
+//Agregar item a base principal
+app.post('/inventory/admin', (req, res) => {
+  const { item_name, quantity } = req.body;
+  pool.getConnection((err, connection) => {
+    connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
+      connection.release();
+      if (err) return res.status(500).send(err);
+      res.status(201).send('Item added to inventory');
+    });
+  });
+});
+
 app.put('/inventory/:id', authenticateToken, (req, res) => {
   const { item_name, quantity } = req.body;
   const userId = req.user.id;
