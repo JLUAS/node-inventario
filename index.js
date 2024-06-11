@@ -159,7 +159,7 @@ app.post('/inventory/admin', (req, res) => {
       return res.status(500).send('Error getting connection');
     }
 
-    connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
+    connection.query(`INSERT INTO inventory_user (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
       connection.release();
       if (err) {
         console.error('Error executing query:', err);
