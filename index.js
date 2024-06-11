@@ -153,10 +153,6 @@ app.post('/inventory/:username', (req, res) => {
 app.post('/inventory/admin', (req, res) => {
   const { item_name, quantity } = req.body;
 
-  if (!item_name || !quantity) {
-    return res.status(400).send('Item name and quantity are required');
-  }
-
   pool.getConnection((err, connection) => {
     if (err) {
       console.error('Error getting connection:', err);
