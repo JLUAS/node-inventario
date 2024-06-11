@@ -150,7 +150,7 @@ app.post('/inventory/:username', (req, res) => {
 });
 
 //Agregar item a base principal
-app.post('/inventory/admin', (req, res) => {
+app.post('/inventory/main', (req, res) => {
   const { item_name, quantity } = req.body;
 
   pool.getConnection((err, connection) => {
@@ -159,7 +159,7 @@ app.post('/inventory/admin', (req, res) => {
       return res.status(500).send('Error getting connection');
     }
 
-    connection.query(`INSERT INTO inventory_elizabeth (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
+    connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
       connection.release();
       if (err) {
         console.error('Error executing query:', err);
