@@ -154,11 +154,6 @@ app.post('/inventory', (req, res) => {
   const { item_name, quantity } = req.body;
 
   pool.getConnection((err, connection) => {
-    if (err) {
-      console.error('Error getting connection:', err);
-      return res.status(500).send('Error getting connection');
-    }
-
     connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
       connection.release();
       if (err) {
