@@ -101,7 +101,7 @@ app.post('/admin', (req, res) => {
 
 //Obtener inventario general
 app.get('/inventory/main', (req, res) => {
-  const sql = `SELECT item_name, quantity FROM inventories`;
+  const sql = `SELECT id, item_name, quantity FROM inventories`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
     connection.query(sql, (err, results) => {
