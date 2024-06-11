@@ -213,15 +213,32 @@ app.put('/inventory/:id', authenticateToken, (req, res) => {
   });
 });
 
-app.delete('/inventory/:id', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const itemId = req.params.id;
+app.delete('/inventory/:id', (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    console.error('Validation Error: ID is required');
+    return res.status(400).send('ID is required');
+  }
+
   pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query('DELETE FROM inventories WHERE id = ? AND user_id = ?', [itemId, userId], (err) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    connection.query('DELETE FROM inventories WHERE id = ?', [id], (err, results) => {
       connection.release();
-      if (err) return res.status(500).send(err);
-      res.status(200).send('Item correctamente eliminado');
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Item not found');
+      }
+
+      res.status(200).send('Item deleted');
     });
   });
 });
