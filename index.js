@@ -153,17 +153,50 @@ app.post('/inventory/:username', (req, res) => {
 app.post('/inventory', (req, res) => {
   const { item_name, quantity } = req.body;
 
+  if (!item_name || !quantity) {
+    console.error('Validation Error: Item name and quantity are required');
+    return res.status(400).send('Item name and quantity are required');
+  }
+
   pool.getConnection((err, connection) => {
-    connection.query(`INSERT INTO inventories (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
-      connection.release();
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    connection.query('SELECT quantity FROM inventories WHERE item_name = ?', [item_name], (err, results) => {
       if (err) {
-        console.error('Error executing query:', err);
-        return res.status(500).send('Error executing query');
+        connection.release();
+        console.error('Database Query Error:', err);
+        return res.status(500).send('Database Query Error');
       }
-      res.status(201).send('Item added to inventory');
+
+      if (results.length > 0) {
+        // Item exists, update quantity
+        const newQuantity = results[0].quantity + quantity;
+        connection.query('UPDATE inventories SET quantity = ? WHERE item_name = ?', [newQuantity, item_name], (err) => {
+          connection.release();
+          if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).send('Error executing query');
+          }
+          res.status(200).send('Item quantity updated');
+        });
+      } else {
+        // Item does not exist, insert new record
+        connection.query('INSERT INTO inventories (item_name, quantity) VALUES (?, ?)', [item_name, quantity], (err) => {
+          connection.release();
+          if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).send('Error executing query');
+          }
+          res.status(201).send('Item added to inventory');
+        });
+      }
     });
   });
 });
+
 
 
 app.put('/inventory/:id', authenticateToken, (req, res) => {
