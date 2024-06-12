@@ -181,7 +181,7 @@ app.post('/upload/database', upload.single('file'), async (req, res) => {
 
     const insertPromises = rows.slice(1).map(row => { // Ignorar la primera fila si es encabezado
       return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO data (id,rank,	marca,	presentacion,	distribucion_tiendas,	frentes,	vol_ytd,	ccc,	peakday_units,	facings_minimos_pd,	ros,	avail3m,	avail_plaza_oxxo,	volume_mix,	industry_packtype,	percent_availab,	mix_ros,	atw,	ajuste_frentes_minimos) VALUES(?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?. ?, ?, ?, ?. ?, ?, ?)';
+        const query = 'INSERT INTO data (id, rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);';
         db.query(query, row, (err, result) => {
           if (err) return reject(err);
           resolve(result);
