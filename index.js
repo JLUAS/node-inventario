@@ -6,9 +6,9 @@ const dotenv = require("dotenv");
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
-const authenticateToken = require('./authInterceptor'); // Importar el middleware
 const xlsx = require('xlsx');
 const fs = require('fs');
+const authenticateToken = require('./authInterceptor'); // Importar el middleware
 
 dotenv.config({ path: './db.env' });
 
@@ -70,7 +70,7 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-//login de un usuario
+// Login de un usuario
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -91,7 +91,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-//hacer login de un admin 
+// Hacer login de un admin 
 app.post('/admin', (req, res) => {
   const { username, password } = req.body;
 
@@ -112,7 +112,7 @@ app.post('/admin', (req, res) => {
   });
 });
 
-//Obtener inventario general
+// Obtener inventario general
 app.get('/inventory/main', (req, res) => {
   const sql = `SELECT id, item_name, quantity FROM inventories`;
   pool.getConnection((err, connection) => {
@@ -129,7 +129,7 @@ app.get('/inventory/main', (req, res) => {
   });
 });
 
-//Obtener inventario por usuario
+// Obtener inventario por usuario
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const userTableName = `inventory_${username}`;
@@ -148,7 +148,7 @@ app.get('/inventory/:username', (req, res) => {
   });
 });
 
-//Agregar item a tabla de usuario
+// Agregar item a tabla de usuario
 app.post('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const { item_name, quantity } = req.body;
@@ -162,6 +162,7 @@ app.post('/inventory/:username', (req, res) => {
   });
 });
 
+// Endpoint para subir archivo .xlsx y procesar datos
 app.post('/upload/database', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
@@ -204,7 +205,7 @@ app.post('/upload/database', upload.single('file'), (req, res) => {
   });
 });
 
-//Agregar item a base principal
+// Agregar item a base principal
 app.post('/inventory', (req, res) => {
   const { item_name, quantity } = req.body;
 
@@ -251,8 +252,6 @@ app.post('/inventory', (req, res) => {
     });
   });
 });
-
-
 
 app.put('/inventory/:id', authenticateToken, (req, res) => {
   const { item_name, quantity } = req.body;
