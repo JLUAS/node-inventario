@@ -196,6 +196,7 @@ app.post('/upload/database', upload.single('file'), async (req, res) => {
 
     res.send('File uploaded and data inserted successfully.');
   } catch (error) {
+    console.log(rows)
     console.error('Error processing file:', error);
     res.status(500).send('Error processing file.');
   }
