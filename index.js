@@ -169,41 +169,52 @@ app.post('/inventory/:username', (req, res) => {
 // Endpoint para subir archivo .xlsx y procesar datos
 // Ruta para subir archivo .xlsx y agregar datos a la base de datos
 app.post('/upload/database', upload.single('file'), async (req, res) => {
-  
-  try {
-    const file = req.file;
-    console.log(file)
-    if (!file) {
-      return res.status(400).send('No file uploaded.');
-    }
+  connection.beginTransaction(async (err) => {
+    if (err) throw err;
 
-    const database = await XlsxPopulate.fromDataAsync(file.buffer);
-    const sheet = database.sheet(0); // Primera hoja
-    const rows = sheet.usedRange().value();
-    console.log(rows)
-    const insertPromises = rows.slice(1).map(row => { // Ignorar la primera fila si es encabezado
-      return new Promise((resolve, reject) => {
-        const query = 'INSERT INTO data (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);';
-        db.query(query, row, (err, result) => {
-          if (err) {
-            console.error('Error executing query:', err);
-            return reject(err);
-            console.log(rows)
-          }
-          resolve(result);
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).send('No file uploaded.');
+      }
+
+      const database = await XlsxPopulate.fromDataAsync(file.buffer);
+      const sheet = database.sheet(0);
+      const rows = sheet.usedRange().value();
+
+      const insertPromises = rows.slice(1).map(row => {
+        return new Promise((resolve, reject) => {
+          const query = `INSERT INTO data 
+            ( rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) 
+            VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+          connection.query(query, row, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          });
         });
       });
-    });
 
-    await Promise.all(insertPromises);
+      await Promise.all(insertPromises);
 
-    res.send('File uploaded and data inserted successfully.');
-  } catch (error) {
-    console.log(rows)
-    console.error('Error processing file:', error);
-    res.status(500).send('Error processing file.');
-  }
+      connection.commit((err) => {
+        if (err) {
+          return connection.rollback(() => {
+            throw err;
+          });
+        }
+        res.send('File uploaded and data inserted successfully.');
+      });
+    } catch (error) {
+      connection.rollback(() => {
+        console.error('Error processing file:', error);
+        res.status(500).send('Error processing file.');
+      });
+    } finally {
+      connection.end();
+    }
+  });
 });
+
 
 // Agregar item a base principal
 app.post('/inventory', (req, res) => {
