@@ -6,10 +6,8 @@ const dotenv = require("dotenv");
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
-const xlsx = require('xlsx');
-const fs = require('fs');
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
-
+const XlsxPopulate = require('xlsx-populate')
 dotenv.config({ path: './db.env' });
 
 const app = express();
@@ -37,6 +35,12 @@ const dbConfig = {
   database: process.env.database,
   connectionLimit: 10, // Adjust based on your needs
 };
+
+async function main(){
+  const database = await XlsxPopulate.fromFileAsync('./Database.xlsx');
+  const value = database.sheet('Hoja 1').usedRange().value();
+  console.log(value)
+}
 
 const pool = mysql.createPool(dbConfig);
 
@@ -163,20 +167,35 @@ app.post('/inventory/:username', (req, res) => {
 });
 
 // Endpoint para subir archivo .xlsx y procesar datos
-app.post('/api/upload-text', (req, res) => {
-  const data = req.body.data;
-
-  const query = 'INSERT INTO data (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES ?';
-  const values = data.map(item => [item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11], item[12], item[13], item[14], item[15], item[16], item[17]]);
-
-  connection.query(query, [values], (error, results) => {
-    if (error) {
-      console.error('Error inserting data into the database:', error);
-      res.status(500).send('Error inserting data');
-      return;
+// Ruta para subir archivo .xlsx y agregar datos a la base de datos
+app.post('/upload/database', upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send('No file uploaded.');
     }
-    res.send('Data inserted successfully');
-  });
+
+    const database = await XlsxPopulate.fromDataAsync(file.buffer);
+    const sheet = database.sheet(0); // Primera hoja
+    const rows = sheet.usedRange().value();
+
+    const insertPromises = rows.slice(1).map(row => { // Ignorar la primera fila si es encabezado
+      return new Promise((resolve, reject) => {
+        const query = 'INSERT INTO data (id,rank,	marca,	presentacion,	distribucion_tiendas,	frentes,	vol_ytd,	ccc,	peakday_units,	facings_minimos_pd,	ros,	avail3m,	avail_plaza_oxxo,	volume_mix,	industry_packtype,	percent_availab,	mix_ros,	atw,	ajuste_frentes_minimos) VALUES(?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?. ?, ?, ?, ?. ?, ?, ?)';
+        db.query(query, row, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+    });
+
+    await Promise.all(insertPromises);
+
+    res.send('File uploaded and data inserted successfully.');
+  } catch (error) {
+    console.error('Error processing file:', error);
+    res.status(500).send('Error processing file.');
+  }
 });
 
 // Agregar item a base principal
