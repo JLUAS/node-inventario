@@ -178,7 +178,7 @@ app.post('/upload/database', upload.single('file'), async (req, res) => {
     const database = await XlsxPopulate.fromDataAsync(file.buffer);
     const sheet = database.sheet(0); // Primera hoja
     const rows = sheet.usedRange().value();
-
+    console.log(rows)
     const insertPromises = rows.slice(1).map(row => { // Ignorar la primera fila si es encabezado
       return new Promise((resolve, reject) => {
         const query = 'INSERT INTO data (id, rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);';
@@ -186,6 +186,7 @@ app.post('/upload/database', upload.single('file'), async (req, res) => {
           if (err) {
             console.error('Error executing query:', err);
             return reject(err);
+            console.log(rows)
           }
           resolve(result);
         });
