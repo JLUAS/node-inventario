@@ -7,10 +7,23 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
+const xlsx = require('xlsx');
+const fs = require('fs');
 
 dotenv.config({ path: './db.env' });
 
 const app = express();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage });
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -146,6 +159,48 @@ app.post('/inventory/:username', (req, res) => {
       if (err) return res.status(500).send(err);
       res.status(201).send('Item added to inventory');
     });
+  });
+});
+
+app.post('/upload/database', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet_name_list = workbook.SheetNames;
+  const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+
+  const sql = `INSERT INTO data (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES ?`;
+
+  const values = data.map(item => [
+    item.rank,
+    item.marca,
+    item.presentacion,
+    item.distribucion_tiendas,
+    item.frentes,
+    item.vol_ytd,
+    item.ccc,
+    item.peakday_units,
+    item.facings_minimos_pd,
+    item.ros,
+    item.avail3m,
+    item.avail_plaza_oxxo,
+    item.volume_mix,
+    item.industry_packtype,
+    item.percent_availab,
+    item.mix_ros,
+    item.atw,
+    item.ajuste_frentes_minimos
+  ]);
+
+  pool.query(sql, [values], (err, result) => {
+    fs.unlinkSync(req.file.path); // Eliminar archivo después de procesarlo
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Error uploading data');
+    }
+    res.status(200).send('Data uploaded successfully');
   });
 });
 
