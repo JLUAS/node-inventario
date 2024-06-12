@@ -163,11 +163,11 @@ app.post('/inventory/:username', (req, res) => {
 });
 
 // Endpoint para subir archivo .xlsx y procesar datos
-app.post('/upload/database', upload.single('file'), (req, res) => {
+app.post('/api/upload-text', (req, res) => {
   const data = req.body.data;
 
-  const query = `INSERT INTO data (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES ?`;
-  const values = data.map(item => [rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos]);
+  const query = 'INSERT INTO data (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) VALUES ?';
+  const values = data.map(item => [item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11], item[12], item[13], item[14], item[15], item[16], item[17]]);
 
   connection.query(query, [values], (error, results) => {
     if (error) {
