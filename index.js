@@ -169,8 +169,10 @@ app.post('/inventory/:username', (req, res) => {
 // Endpoint para subir archivo .xlsx y procesar datos
 // Ruta para subir archivo .xlsx y agregar datos a la base de datos
 app.post('/upload/database', upload.single('file'), async (req, res) => {
+  
   try {
     const file = req.file;
+    console.log(file)
     if (!file) {
       return res.status(400).send('No file uploaded.');
     }
