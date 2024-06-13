@@ -161,7 +161,7 @@ app.get('/inventory/:username', (req, res) => {
           console.error("Error al crear la tabla: ", err);
           return res.status(500).send({ error: "Error al crear la tabla" });
         }else{
-          try {
+          
             const workbook =  XlsxPopulate.fromFileAsync('./Database.xlsx');
             const sheet = workbook.sheet(0);
             const usedRange = sheet.usedRange();
@@ -183,10 +183,6 @@ app.get('/inventory/:username', (req, res) => {
                 });
               });
             }
-          } catch (error) {
-            console.error('Error processing file:', error);
-            throw error;
-          }
         }
         
         const sql = `SELECT * FROM ${userTableName}`;
