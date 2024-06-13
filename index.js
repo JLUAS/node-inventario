@@ -380,10 +380,9 @@ app.post('/register/user', async (req, res) => {
   });
 });
 
-// Función principal para procesar y enviar filas completas
-async function main(file) {
+async function main() {
   try {
-    const workbook = await XlsxPopulate.fromFileAsync(file.path);
+    const workbook = await XlsxPopulate.fromFileAsync('./Database.xlsx');
     const sheet = workbook.sheet(0);
     const usedRange = sheet.usedRange();
     const data = usedRange.value();
@@ -422,21 +421,6 @@ async function main(file) {
     throw error;
   }
 }
-
-// Endpoint para subir archivo .xlsx y enviar filas completas
-app.post('/upload/database', upload.single('file'), async (req, res) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      return res.status(400).send('No file uploaded.');
-    }
-    await main(file);
-    res.send('File uploaded and data inserted successfully.');
-  } catch (error) {
-    res.status(500).send('Error processing file.');
-  }
-});
-
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
