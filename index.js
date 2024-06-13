@@ -12,16 +12,16 @@ dotenv.config({ path: './db.env' });
 
 const app = express();
 
+// Configurar almacenamiento de multer para guardar archivos temporalmente
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -68,14 +68,62 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-app.post('/upload-excel', upload.single('file'), (req, res) => {
-  const workbook = xlsx.readFile('./Database.xlsx');
-  const worksheet = workbook.getSheet('Hoja 1');
-  const rows = worksheet.getRows();
-  for (let i = 0; i < rows.length; i++) {
-   const row = rows[i];
-  console.log(row);
+app.post('/upload/excel', upload.single('myFile'), (req, res) => {
+  const filePath = req.file.path;
+
+  async function main() {
+    try {
+      const workbook = await XlsxPopulate.fromFileAsync(filePath);
+      const sheet = workbook.sheet(0);
+      const usedRange = sheet.usedRange();
+      const data = usedRange.value();
+      const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
+
+      // Eliminar todos los registros existentes en la tabla 'data'
+      await new Promise((resolve, reject) => {
+        connection.query('DELETE FROM data', (err, result) => {
+          if (err) {
+            console.error('Error deleting existing records:', err);
+            reject(err);
+          } else {
+            console.log('Existing records deleted');
+            resolve(result);
+          }
+        });
+      });
+
+      // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+        await new Promise((resolve, reject) => {
+          connection.query(query, row, (err, result) => {
+            if (err) {
+              console.error(`Error inserting row ${i}:`, err);
+              reject(err);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+      }
+
+      console.log('File processed successfully');
+      res.send({ data: "File processed successfully" });
+    } catch (error) {
+      console.error('Error processing file:', error);
+      res.status(500).send({ error: "Error processing file" });
+    } finally {
+      // Elimina el archivo temporal después de procesarlo
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error('Error deleting temp file:', err);
+        }
+      });
+    }
   }
+
+  main();
 });
 
 // Login de un usuario
