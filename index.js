@@ -141,19 +141,38 @@ app.get('/inventory/main', (req, res) => {
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const userTableName = `inventory_${username}`;
-  connection.query(`drop table ${userTableName}`)
-  connection.query(`CREATE TABLE ${userTableName} LIKE data`)
-  const sql = `SELECT item_name, quantity FROM ${userTableName}`;
+  
   pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query(sql, (err, results) => {
-      connection.release();
+    if (err) {
+      console.error("Error al obtener conexión de la base de datos: ", err);
+      return res.status(500).send({ error: "Error al obtener conexión de la base de datos" });
+    }
+    
+    connection.query(`DROP TABLE IF EXISTS ??`, [userTableName], (err) => {
       if (err) {
-        console.error("Error al obtener datos de la base de datos: ", err);
-        res.status(500).send({ error: "Error al obtener datos de la base de datos" });
-      } else {
-        res.send(results);
+        connection.release();
+        console.error("Error al eliminar la tabla: ", err);
+        return res.status(500).send({ error: "Error al eliminar la tabla" });
       }
+      
+      connection.query(`CREATE TABLE ?? LIKE data`, [userTableName], (err) => {
+        if (err) {
+          connection.release();
+          console.error("Error al crear la tabla: ", err);
+          return res.status(500).send({ error: "Error al crear la tabla" });
+        }
+        
+        const sql = `SELECT * FROM ??`;
+        connection.query(sql, [userTableName], (err, results) => {
+          connection.release();
+          if (err) {
+            console.error("Error al obtener datos de la base de datos: ", err);
+            res.status(500).send({ error: "Error al obtener datos de la base de datos" });
+          } else {
+            res.send(results);
+          }
+        });
+      });
     });
   });
 });
