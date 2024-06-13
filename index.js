@@ -36,12 +36,6 @@ const dbConfig = {
   connectionLimit: 10, // Adjust based on your needs
 };
 
-async function main(){
-  const database = await XlsxPopulate.fromFileAsync('./Database.xlsx');
-  const value = database.sheet('Hoja 1').usedRange().value();
-  console.log(value)
-}
-
 const pool = mysql.createPool(dbConfig);
 
 pool.on('connection', (connection) => {
@@ -73,6 +67,16 @@ function handleDisconnect() {
 }
 
 handleDisconnect();
+
+app.post('/upload-excel', upload.single('file'), (req, res) => {
+  const workbook = xlsx.readFile('./Database.xlsx');
+  const worksheet = workbook.getSheet('Hoja 1');
+  const rows = worksheet.getRows();
+  for (let i = 0; i < rows.length; i++) {
+   const row = rows[i];
+  console.log(row);
+  }
+});
 
 // Login de un usuario
 app.post('/login', (req, res) => {
@@ -167,60 +171,6 @@ app.post('/inventory/:username', (req, res) => {
 });
 
 // Endpoint para subir archivo .xlsx y procesar datos
-// Ruta para subir archivo .xlsx y agregar datos a la base de datos
-app.post('/upload/database', upload.single('file'), async (req, res) => {
-  const connection = await pool.getConnection();
-
-  connection.beginTransaction(async (err) => {
-    if (err) {
-      connection.release();
-      return res.status(500).send('Transaction Error');
-    }
-
-    try {
-      const file = req.file;
-      if (!file) {
-        connection.release();
-        return res.status(400).send('No file uploaded.');
-      }
-
-      const database = await XlsxPopulate.fromDataAsync(file.buffer);
-      const sheet = database.sheet(0); // Primera hoja
-      const rows = sheet.usedRange().value();
-
-      const insertPromises = rows.slice(1).map(row => { // Ignorar la primera fila si es encabezado
-        return new Promise((resolve, reject) => {
-          const query = `INSERT INTO data 
-            (rank, marca, presentacion, distribucion_tiendas, frentes, vol_ytd, ccc, peakday_units, facings_minimos_pd, ros, avail3m, avail_plaza_oxxo, volume_mix, industry_packtype, percent_availab, mix_ros, atw, ajuste_frentes_minimos) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
-          connection.query(query, row, (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
-        });
-      });
-
-      await Promise.all(insertPromises);
-
-      connection.commit((err) => {
-        if (err) {
-          return connection.rollback(() => {
-            connection.release();
-            throw err;
-          });
-        }
-        connection.release();
-        res.send('File uploaded and data inserted successfully.');
-      });
-    } catch (error) {
-      connection.rollback(() => {
-        connection.release();
-        console.error('Error processing file:', error);
-        res.status(500).send('Error processing file.');
-      });
-    }
-  });
-});
 
 
 // Agregar item a base principal
@@ -430,6 +380,65 @@ app.post('/register/user', async (req, res) => {
   });
 });
 
+// Función principal para procesar y enviar filas completas
+async function main(file) {
+  try {
+    const workbook = await XlsxPopulate.fromFileAsync(file.path);
+    const sheet = workbook.sheet(0);
+    const usedRange = sheet.usedRange();
+    const data = usedRange.value();
+    const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
+
+    // Eliminar todos los registros existentes en la tabla 'data'
+    await new Promise((resolve, reject) => {
+      pool.query('DELETE FROM data', (err, result) => {
+        if (err) {
+          console.error('Error deleting existing records:', err);
+          reject(err);
+        } else {
+          console.log('Existing records deleted');
+          resolve(result);
+        }
+      });
+    });
+
+    // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      await new Promise((resolve, reject) => {
+        pool.query(query, row, (err, result) => {
+          if (err) {
+            console.error(`Error inserting row ${i}:`, err);
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Error processing file:', error);
+    throw error;
+  }
+}
+
+// Endpoint para subir archivo .xlsx y enviar filas completas
+app.post('/upload/database', upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send('No file uploaded.');
+    }
+    await main(file);
+    res.send('File uploaded and data inserted successfully.');
+  } catch (error) {
+    res.status(500).send('Error processing file.');
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
+  main()
 });
