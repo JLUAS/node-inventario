@@ -141,6 +141,8 @@ app.get('/inventory/main', (req, res) => {
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const userTableName = `inventory_${username}`;
+  connection.query(`drop table ${userTableName}`)
+  connection.query(`CREATE TABLE ${userTableName} LIKE data`)
   const sql = `SELECT item_name, quantity FROM ${userTableName}`;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
@@ -170,9 +172,6 @@ app.post('/inventory/:username', (req, res) => {
   });
 });
 
-// Endpoint para subir archivo .xlsx y procesar datos
-
-
 // Agregar item a base principal
 app.post('/inventory', (req, res) => {
   const { item_name, quantity } = req.body;
@@ -188,7 +187,7 @@ app.post('/inventory', (req, res) => {
       return res.status(500).send('Database Connection Error');
     }
 
-    connection.query('SELECT quantity FROM inventories WHERE item_name = ?', [item_name], (err, results) => {
+    connection.query('SELECT quantity FROM data WHERE item_name = ?', [item_name], (err, results) => {
       if (err) {
         connection.release();
         console.error('Database Query Error:', err);
@@ -198,7 +197,7 @@ app.post('/inventory', (req, res) => {
       if (results.length > 0) {
         // Item exists, update quantity
         const newQuantity = results[0].quantity + quantity;
-        connection.query('UPDATE inventories SET quantity = ? WHERE item_name = ?', [newQuantity, item_name], (err) => {
+        connection.query('UPDATE data SET quantity = ? WHERE item_name = ?', [newQuantity, item_name], (err) => {
           connection.release();
           if (err) {
             console.error('Error executing query:', err);
@@ -208,7 +207,7 @@ app.post('/inventory', (req, res) => {
         });
       } else {
         // Item does not exist, insert new record
-        connection.query('INSERT INTO inventories (item_name, quantity) VALUES (?, ?)', [item_name, quantity], (err) => {
+        connection.query('INSERT INTO data (item_name, quantity) VALUES (?, ?)', [item_name, quantity], (err) => {
           connection.release();
           if (err) {
             console.error('Error executing query:', err);
@@ -227,7 +226,7 @@ app.put('/inventory/:id', authenticateToken, (req, res) => {
   const itemId = req.params.id;
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
-    connection.query('UPDATE inventories SET item_name = ?, quantity = ? WHERE id = ? AND user_id = ?', [item_name, quantity, itemId, userId], (err) => {
+    connection.query('UPDATE data SET item_name = ?, quantity = ? WHERE id = ? AND user_id = ?', [item_name, quantity, itemId, userId], (err) => {
       connection.release();
       if (err) return res.status(500).send(err);
       res.status(200).send('Item correctamente editado');
@@ -249,7 +248,7 @@ app.delete('/inventory/:id', (req, res) => {
       return res.status(500).send('Database Connection Error');
     }
 
-    connection.query('DELETE FROM inventories WHERE id = ?', [id], (err, results) => {
+    connection.query('DELETE FROM data WHERE id = ?', [id], (err, results) => {
       connection.release();
       if (err) {
         console.error('Error executing query:', err);
@@ -345,14 +344,14 @@ app.post('/register/user', async (req, res) => {
         } else {
           const userTableName = `inventory_${username}`;
 
-          connection.query(`CREATE TABLE ${userTableName} LIKE inventories`, (err) => {
+          connection.query(`CREATE TABLE ${userTableName} LIKE data`, (err) => {
             if (err) {
               connection.rollback(() => {
                 connection.release();
                 return res.status(500).send(err);
               });
             } else {
-              connection.query(`INSERT INTO ${userTableName} (item_name, quantity) SELECT item_name, quantity FROM inventories`, (err) => {
+              connection.query(`INSERT INTO ${userTableName} (item_name, quantity) SELECT item_name, quantity FROM data`, (err) => {
                 if (err) {
                   connection.rollback(() => {
                     connection.release();
@@ -380,6 +379,7 @@ app.post('/register/user', async (req, res) => {
   });
 });
 
+//hacer post de una base de datos
 async function main() {
   try {
     const workbook = await XlsxPopulate.fromFileAsync('./Database.xlsx');
