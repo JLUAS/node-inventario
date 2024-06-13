@@ -147,7 +147,8 @@ app.get('/inventory/:username', (req, res) => {
       console.error("Error al obtener conexión de la base de datos: ", err);
       return res.status(500).send({ error: "Error al obtener conexión de la base de datos" });
     }
-    
+
+    // Crear la nueva tabla con la misma estructura que 'data'
     connection.query(`DROP TABLE IF EXISTS ??`, [userTableName], (err) => {
       if (err) {
         connection.release();
@@ -160,45 +161,33 @@ app.get('/inventory/:username', (req, res) => {
           connection.release();
           console.error("Error al crear la tabla: ", err);
           return res.status(500).send({ error: "Error al crear la tabla" });
-        }else{
-          
-            const workbook =  XlsxPopulate.fromFileAsync('./Database.xlsx');
-            const sheet = workbook.sheet(0);
-            const usedRange = sheet.usedRange();
-            const data = usedRange.value();
-            const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
-        
-            // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
-            for (let i = 1; i < data.length; i++) {
-              const row = data[i];
-              const query = `INSERT INTO ${userTableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-               new Promise((resolve, reject) => {
-                pool.query(query, row, (err, result) => {
-                  if (err) {
-                    console.error(`Error inserting row ${i}:`, err);
-                    reject(err);
-                  } else {
-                    resolve(result);
-                  }
-                });
-              });
-            }
         }
-        
-        const sql = `SELECT * FROM ${userTableName}`;
-        connection.query(sql, [userTableName], (err, results) => {
-          connection.release();
+
+        // Insertar los datos de 'data' en la nueva tabla
+        connection.query(`INSERT INTO ?? SELECT * FROM data`, [userTableName], (err) => {
           if (err) {
-            console.error("Error al obtener datos de la base de datos: ", err);
-            res.status(500).send({ error: "Error al obtener datos de la base de datos" });
-          } else {
-            res.send(results);
+            connection.release();
+            console.error("Error al copiar los datos a la nueva tabla: ", err);
+            return res.status(500).send({ error: "Error al copiar los datos a la nueva tabla" });
           }
+          
+          // Seleccionar los datos de la nueva tabla
+          const sql = `SELECT * FROM ??`;
+          connection.query(sql, [userTableName], (err, results) => {
+            connection.release();
+            if (err) {
+              console.error("Error al obtener datos de la base de datos: ", err);
+              res.status(500).send({ error: "Error al obtener datos de la base de datos" });
+            } else {
+              res.send(results);
+            }
+          });
         });
       });
     });
   });
 });
+
 
 // Agregar item a tabla de usuario
 app.post('/inventory/:username', (req, res) => {
