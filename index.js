@@ -348,16 +348,45 @@ app.post('/inventory', (req, res) => {
   });
 });
 
-app.put('/inventory/:id', authenticateToken, (req, res) => {
-  const { item_name, quantity } = req.body;
-  const userId = req.user.id;
-  const itemId = req.params.id;
+// Ruta para editar un item en la base de datos
+app.put('/inventory/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+
+  if (!id) {
+    console.error('Validation Error: ID is required');
+    return res.status(400).send('ID is required');
+  }
+
+  if (!updatedData || Object.keys(updatedData).length === 0) {
+    console.error('Validation Error: No data provided to update');
+    return res.status(400).send('No data provided to update');
+  }
+
   pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query('UPDATE data SET item_name = ?, quantity = ? WHERE id = ? AND user_id = ?', [item_name, quantity, itemId, userId], (err) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    const fields = Object.keys(updatedData).map(field => `${field} = ?`).join(', ');
+    const values = Object.values(updatedData);
+    values.push(id);
+
+    const query = `UPDATE data SET ${fields} WHERE id = ?`;
+
+    connection.query(query, values, (err, results) => {
       connection.release();
-      if (err) return res.status(500).send(err);
-      res.status(200).send('Item correctamente editado');
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Item not found');
+      }
+
+      res.status(200).send('Item updated successfully');
     });
   });
 });
