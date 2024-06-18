@@ -9,6 +9,8 @@ const bcrypt = require("bcryptjs");
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
 const XlsxPopulate = require('xlsx-populate')
 const path = require('path');
+const fs = require('fs');
+
 dotenv.config({ path: './db.env' });
 
 const app = express();
