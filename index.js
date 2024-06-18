@@ -14,13 +14,16 @@ const app = express();
 
 // Configurar almacenamiento de multer para guardar archivos temporalmente
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+  filename: function (res, file, cb) {
+    const ext = file.originalname.split(".").pop(); //TODO pdf / jpeg / mp3
+    const fileName = Date.now(); //TODO 12312321321
+    cb(null, `${fileName}.${ext}`); //TODO 123123213232.pdf
   },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
+  destination: function (res, file, cb) {
+    cb(null, `./public`);
+  },
 });
+
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
@@ -68,112 +71,12 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
-  const filePath = req.file.path;
-
-  try {
-    const workbook = await XlsxPopulate.fromFileAsync(filePath);
-    const sheet = workbook.sheet(0);
-    const usedRange = sheet.usedRange();
-    const data = usedRange.value();
-    const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
-
-    // Eliminar todos los registros existentes en la tabla 'data'
-    await new Promise((resolve, reject) => {
-      pool.query('DELETE FROM data', (err, result) => {
-        if (err) {
-          console.error('Error deleting existing records:', err);
-          reject(err);
-        } else {
-          console.log('Existing records deleted');
-          resolve(result);
-        }
-      });
-    });
-
-    // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-      await new Promise((resolve, reject) => {
-        pool.query(query, row, (err, result) => {
-          if (err) {
-            console.error(`Error inserting row ${i}:`, err);
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      });
-    }
-
-    console.log('File processed successfully');
-    res.send({ data: "File processed successfully" });
-  } catch (error) {
-    console.error('Error processing file:', error);
-    res.status(500).send({ error: "Error processing file" });
-  } finally {
-    // Elimina el archivo temporal después de procesarlo
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error('Error deleting temp file:', err);
-      }
-    });
-  }
+app.post('/upload/database', upload.single('myFile'), async (req, res) => {
+  const file = req.file.filename;
+  console.log(file)
+  res.send({ data: "OK", url: `http://localhost:3000/${file}` });
 });
 
-app.post('/upload/excel', upload.single('myFile'), (req, res) => {
-  const filePath = req.file.path;
-  try {
-      const workbook = XlsxPopulate.fromFileAsync(filePath);
-      const sheet = workbook.sheet(0);
-      const usedRange = sheet.usedRange();
-      const data = usedRange.value();
-      const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
-
-      // Eliminar todos los registros existentes en la tabla 'data'
-     new Promise((resolve, reject) => {
-        connection.query('DELETE FROM data', (err, result) => {
-          if (err) {
-            console.error('Error deleting existing records:', err);
-            reject(err);
-          } else {
-            console.log('Existing records deleted');
-            resolve(result);
-          }
-        });
-      });
-
-      // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-        const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
-       new Promise((resolve, reject) => {
-          connection.query(query, row, (err, result) => {
-            if (err) {
-              console.error(`Error inserting row ${i}:`, err);
-              reject(err);
-            } else {
-              resolve(result);
-            }
-          });
-        });
-      }
-
-      console.log('File processed successfully');
-      res.send({ data: "File processed successfully" });
-    } catch (error) {
-      console.error('Error processing file:', error);
-      res.status(500).send({ error: "Error processing file" });
-    } finally {
-      // Elimina el archivo temporal después de procesarlo
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error('Error deleting temp file:', err);
-        }
-      });
-    }
-});
 
 // Login de un usuario
 app.post('/login', (req, res) => {
