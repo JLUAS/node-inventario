@@ -8,11 +8,17 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require("bcryptjs");
 const authenticateToken = require('./authInterceptor'); // Importar el middleware
 const XlsxPopulate = require('xlsx-populate')
+const path = require('path');
 dotenv.config({ path: './db.env' });
 
 const app = express();
 
-// Configurar almacenamiento de multer para guardar archivos temporalmente
+// Crear el directorio `public` si no existe
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir);
+}
+
 const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const ext = file.originalname.split(".").pop(); // Obtener la extensión del archivo
@@ -20,7 +26,7 @@ const storage = multer.diskStorage({
     cb(null, `${fileName}.${ext}`); // Asignar nombre final al archivo
   },
   destination: function (req, file, cb) {
-    cb(null, `./public`); // Directorio de almacenamiento temporal
+    cb(null, publicDir); // Directorio de almacenamiento temporal
   },
 });
 
@@ -72,8 +78,7 @@ function handleDisconnect() {
 handleDisconnect();
 
 app.post('/upload/database', upload.single('myFile'), async (req, res) => {
-  const filePath = `./public/${req.file.filename}`;
-  console.log(filePath)
+  const filePath = path.join(publicDir, req.file.filename);
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
     const sheet = workbook.sheet(0);
@@ -113,6 +118,7 @@ app.post('/upload/database', upload.single('myFile'), async (req, res) => {
     res.status(500).send('Error processing file');
   }
 });
+
 
 // Login de un usuario
 app.post('/login', (req, res) => {
