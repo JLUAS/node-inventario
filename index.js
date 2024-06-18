@@ -14,13 +14,13 @@ const app = express();
 
 // Configurar almacenamiento de multer para guardar archivos temporalmente
 const storage = multer.diskStorage({
-  filename: function (res, file, cb) {
-    const ext = file.originalname.split(".").pop(); //TODO pdf / jpeg / mp3
-    const fileName = Date.now(); //TODO 12312321321
-    cb(null, `${fileName}.${ext}`); //TODO 123123213232.pdf
+  filename: function (req, file, cb) {
+    const ext = file.originalname.split(".").pop(); // Obtener la extensión del archivo
+    const fileName = Date.now(); // Generar nombre único
+    cb(null, `${fileName}.${ext}`); // Asignar nombre final al archivo
   },
-  destination: function (res, file, cb) {
-    cb(null, `./public`);
+  destination: function (req, file, cb) {
+    cb(null, `./public`); // Directorio de almacenamiento temporal
   },
 });
 
@@ -72,15 +72,14 @@ function handleDisconnect() {
 handleDisconnect();
 
 app.post('/upload/database', upload.single('myFile'), async (req, res) => {
-  const file = req.file.filename;
+  const filePath = `./public/${req.file.filename}`;
   try {
-    const workbook = await XlsxPopulate.fromFileAsync('./Database.xlsx');
+    const workbook = await XlsxPopulate.fromFileAsync(filePath);
     const sheet = workbook.sheet(0);
     const usedRange = sheet.usedRange();
     const data = usedRange.value();
     const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
 
-    // Eliminar todos los registros existentes en la tabla 'data'
     await new Promise((resolve, reject) => {
       pool.query('DELETE FROM data', (err, result) => {
         if (err) {
@@ -93,7 +92,6 @@ app.post('/upload/database', upload.single('myFile'), async (req, res) => {
       });
     });
 
-    // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
@@ -108,12 +106,12 @@ app.post('/upload/database', upload.single('myFile'), async (req, res) => {
         });
       });
     }
+    res.status(200).send('File processed successfully');
   } catch (error) {
     console.error('Error processing file:', error);
-    throw error;
+    res.status(500).send('Error processing file');
   }
 });
-
 
 // Login de un usuario
 app.post('/login', (req, res) => {
