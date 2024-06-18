@@ -73,8 +73,45 @@ handleDisconnect();
 
 app.post('/upload/database', upload.single('myFile'), async (req, res) => {
   const file = req.file.filename;
-  console.log(file)
-  res.send({ data: "OK", url: `http://localhost:3000/${file}` });
+  try {
+    const workbook = await XlsxPopulate.fromFileAsync('./Database.xlsx');
+    const sheet = workbook.sheet(0);
+    const usedRange = sheet.usedRange();
+    const data = usedRange.value();
+    const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
+
+    // Eliminar todos los registros existentes en la tabla 'data'
+    await new Promise((resolve, reject) => {
+      pool.query('DELETE FROM data', (err, result) => {
+        if (err) {
+          console.error('Error deleting existing records:', err);
+          reject(err);
+        } else {
+          console.log('Existing records deleted');
+          resolve(result);
+        }
+      });
+    });
+
+    // Inserta cada fila de datos, omitiendo la primera fila que contiene los encabezados
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      await new Promise((resolve, reject) => {
+        pool.query(query, row, (err, result) => {
+          if (err) {
+            console.error(`Error inserting row ${i}:`, err);
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Error processing file:', error);
+    throw error;
+  }
 });
 
 
