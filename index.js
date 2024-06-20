@@ -79,7 +79,7 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-app.post('/upload/database', upload.single('myFile'), async (req, res) => {
+app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
   const filePath = path.join(publicDir, req.file.filename);
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
