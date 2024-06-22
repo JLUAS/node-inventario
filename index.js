@@ -528,5 +528,4 @@ async function main() {
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
-  main()
 });
