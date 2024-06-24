@@ -138,6 +138,34 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
           }
         });
       });
+      // Limpiar la tabla existente (si es necesario)
+    await new Promise((resolve, reject) => {
+      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
+        if (err) {
+          console.error('Error deleting existing records:', err);
+          reject(err);
+        } else {
+          console.log('Existing records deleted');
+          resolve(result);
+        }
+      });
+    });
+
+    // Insertar datos en la tabla
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      await new Promise((resolve, reject) => {
+        pool.query(query, row, (err, result) => {
+          if (err) {
+            console.error(`Error inserting row ${i}:`, err);
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    }
     }
 
     // Limpiar la tabla existente (si es necesario)
