@@ -510,13 +510,14 @@ app.post('/inventory', (req, res) => {
 });
 
 // Ruta para editar un item en la base de datos
-app.put('/inventory/:id', (req, res) => {
-  const { base, id } = req.params;
+app.put('/inventory/:base/:rank', (req, res) => {
+  const { base, rank } = req.params;
   const updatedData = req.body;
   const tableName = `baseDeDatos_${base}`;
-  if (!id) {
-    console.error('Validation Error: ID is required');
-    return res.status(400).send('ID is required');
+
+  if (!rank) {
+    console.error('Validation Error: Rank is required');
+    return res.status(400).send('Rank is required');
   }
 
   if (!updatedData || Object.keys(updatedData).length === 0) {
@@ -532,7 +533,7 @@ app.put('/inventory/:id', (req, res) => {
 
     const fields = Object.keys(updatedData).map(field => `${field} = ?`).join(', ');
     const values = Object.values(updatedData);
-    values.push(id);
+    values.push(rank);
 
     const query = `UPDATE ${tableName} SET ${fields} WHERE rank = ?`;
 
@@ -551,6 +552,7 @@ app.put('/inventory/:id', (req, res) => {
     });
   });
 });
+
 
 app.delete('/inventory/:id', (req, res) => {
   const { base, id } = req.params;
