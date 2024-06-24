@@ -205,14 +205,14 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
     // Esquema de la tabla
     const tableSchema = `
       id INT AUTO_INCREMENT PRIMARY KEY,
-      datos_planograma FLOAT
-      frentes_totales FLOAT
-      parrillas FLOAT
-      planograma FLOAT
-      skus FLOAT
-      volumen FLOAT
-      parrillas_admin FLOAT
-      degradado FLOAT
+      datos_planograma FLOAT,
+      frentes_totales FLOAT,
+      parrillas FLOAT,
+      planograma FLOAT,
+      skus FLOAT,
+      volumen FLOAT,
+      parrillas_admin FLOAT,
+      degradado FLOAT,
       espacio FLOAT
     `;
 
@@ -241,8 +241,8 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
         });
       });
 
-      // Insertar el nombre de la base de datos en la tabla bases_datos
-      const insertDatabaseNameQuery = `INSERT INTO bases_planograma (nombre_palograma) VALUES (?)`;
+      // Insertar el nombre de la base de datos en la tabla bases_planograma
+      const insertDatabaseNameQuery = `INSERT INTO bases_planograma (nombre_planograma) VALUES (?)`;
       await new Promise((resolve, reject) => {
         pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
           if (err) {
