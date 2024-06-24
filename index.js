@@ -293,8 +293,6 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
   }
 });
 
-
-
 // Login de un usuario
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -337,20 +335,63 @@ app.post('/admin', (req, res) => {
   });
 });
 
-// Obtener inventario general
-app.get('/inventory/main', (req, res) => {
-  const sql = `SELECT * FROM data`;
-  pool.getConnection((err, connection) => {
-    if (err) return res.status(500).send(err);
-    connection.query(sql, (err, results) => {
-      connection.release();
-      if (err) {
-        console.error("Error al obtener datos de la base de datos principal: ", err);
-        res.status(500).send({ error: "Error al obtener datos de la base de datos" });
-      } else {
-        res.send(results);
-      }
-    });
+// Endpoint para obtener todos los nombres de bases de datos
+app.get('/bases-datos', (req, res) => {
+  const query = 'SELECT nombre_base_datos FROM bases_datos';
+  
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching databases:', err);
+      res.status(500).send('Error fetching databases');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+// Endpoint para obtener todos los nombres de planogramas
+app.get('/planogramas', (req, res) => {
+  const query = 'SELECT nombre_planograma FROM bases_planograma';
+  
+  pool.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching planograms:', err);
+      res.status(500).send('Error fetching planograms');
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+// Endpoint para obtener todos los datos de una base de datos específica
+app.get('/datos/:base', (req, res) => {
+  const base = req.params.base;
+  const tableName = `baseDeDatos_${base}`;
+
+  const query = `SELECT * FROM ??`;  // Usando ?? para escapar nombres de tablas
+  pool.query(query, [tableName], (err, results) => {
+    if (err) {
+      console.error(`Error fetching data from ${tableName}:`, err);
+      res.status(500).send(`Error fetching data from ${tableName}`);
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
+// Endpoint para obtener todos los datos de una base de datos específica
+app.get('/datos/:planograma', (req, res) => {
+  const planograma = req.params.planograma;
+  const tableName = `baseDeDatos_${planograma}`;
+
+  const query = `SELECT * FROM ??`;  // Usando ?? para escapar nombres de tablas
+  pool.query(query, [tableName], (err, results) => {
+    if (err) {
+      console.error(`Error fetching data from ${tableName}:`, err);
+      res.status(500).send(`Error fetching data from ${tableName}`);
+    } else {
+      res.status(200).json(results);
+    }
   });
 });
 
