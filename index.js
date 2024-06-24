@@ -80,10 +80,11 @@ function handleDisconnect() {
 handleDisconnect();
 
 app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
-  const originalFileName = req.file.originalname;
-  const tableName = `baseDeDatos_${req.body.tableName}`;
+  const baseDeDatos = req.body.tableName;
+  const tableName = `baseDeDatos_${baseDeDatos}`;
 
   const filePath = path.join(publicDir, req.file.filename);
+
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
     const sheet = workbook.sheet(0);
@@ -138,34 +139,20 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
           }
         });
       });
-      // Limpiar la tabla existente (si es necesario)
-    await new Promise((resolve, reject) => {
-      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
-        if (err) {
-          console.error('Error deleting existing records:', err);
-          reject(err);
-        } else {
-          console.log('Existing records deleted');
-          resolve(result);
-        }
-      });
-    });
 
-    // Insertar datos en la tabla
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      // Insertar el nombre de la base de datos en la tabla bases_datos
+      const insertDatabaseNameQuery = `INSERT INTO bases_datos (nombre_base_datos) VALUES (?)`;
       await new Promise((resolve, reject) => {
-        pool.query(query, row, (err, result) => {
+        pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
           if (err) {
-            console.error(`Error inserting row ${i}:`, err);
+            console.error('Error inserting database name:', err);
             reject(err);
           } else {
+            console.log('Database name inserted');
             resolve(result);
           }
         });
       });
-    }
     }
 
     // Limpiar la tabla existente (si es necesario)
