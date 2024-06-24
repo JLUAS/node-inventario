@@ -205,15 +205,15 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
     // Esquema de la tabla
     const tableSchema = `
       id INT AUTO_INCREMENT PRIMARY KEY,
-      datos_planograma INT
-      frentes_totales INT
-      parrillas INT
-      planograma INT
-      skus INT
-      volumen INT
-      parrillas_admin INT
-      degradado INT
-      espacio INT
+      datos_planograma FLOAT
+      frentes_totales FLOAT
+      parrillas FLOAT
+      planograma FLOAT
+      skus FLOAT
+      volumen FLOAT
+      parrillas_admin FLOAT
+      degradado FLOAT
+      espacio FLOAT
     `;
 
     // Comprobar si la tabla existe
