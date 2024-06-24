@@ -83,7 +83,7 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
   const baseDeDatos = req.body.tableName;
   const tableName = `baseDeDatos_${baseDeDatos}`;
 
-  const filePath = path.join(publicDir, req.file.filename);
+  const filePath = path.join(__dirname, 'uploads', req.file.filename);
 
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
@@ -100,19 +100,19 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
       presentacion VARCHAR(255),
       distribucion_tiendas VARCHAR(255),
       frentes VARCHAR(255),
-      vol_ytd INT,
+      vol_ytd FLOAT,
       ccc VARCHAR(255),
-      peakday_units INT,
-      facings_minimos_pd INT,
-      ros INT,
-      avail3m INT,
-      avail_plaza_oxxo INT,
+      peakday_units FLOAT,
+      facings_minimos_pd FLOAT,
+      ros FLOAT,
+      avail3m FLOAT,
+      avail_plaza_oxxo FLOAT,
       volume_mix VARCHAR(255),
       industry_packtype VARCHAR(255),
-      percent_availab INT,
-      mix_ros INT,
-      atw INT,
-      ajustes_frentes_minimos INT
+      percent_availab FLOAT,
+      mix_ros FLOAT,
+      atw FLOAT,
+      ajuste_frente_minimos FLOAT
     `;
 
     // Comprobar si la tabla existe
