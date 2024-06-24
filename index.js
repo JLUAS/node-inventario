@@ -80,7 +80,7 @@ function handleDisconnect() {
 handleDisconnect();
 
 app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
-  const filePath = path.join(__dirname, 'uploads', req.file.filename);
+  const filePath = path.join(publicDir, req.file.filename);
   const tableName = `baseDeDatos_${path.parse(req.file.filename).name}`;
 
   try {
