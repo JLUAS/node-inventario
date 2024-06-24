@@ -205,6 +205,7 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
     // Esquema de la tabla
     const tableSchema = `
       id INT AUTO_INCREMENT PRIMARY KEY,
+      frente FLOAT,
       datos_planograma FLOAT,
       frentes_totales FLOAT,
       parrillas FLOAT,
