@@ -100,19 +100,19 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
       presentacion VARCHAR(255),
       distribucion_tiendas VARCHAR(255),
       frentes VARCHAR(255),
-      vol_ytd FLOAT,
+      vol_ytd INT,
       ccc VARCHAR(255),
       peakday_units INT,
       facings_minimos_pd INT,
-      ros FLOAT,
-      avail3m FLOAT,
-      avail_plaza_oxxo FLOAT,
+      ros INT,
+      avail3m INT,
+      avail_plaza_oxxo INT,
       volume_mix VARCHAR(255),
       industry_packtype VARCHAR(255),
-      percent_availab FLOAT,
-      mix_ros FLOAT,
-      atw FLOAT,
-      ajustes_frente_minimos FLOAT
+      percent_availab INT,
+      mix_ros INT,
+      atw INT,
+      ajustes_frentes_minimos INT
     `;
 
     // Comprobar si la tabla existe
