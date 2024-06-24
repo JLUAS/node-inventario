@@ -190,8 +190,10 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
   }
 });
 
-
 app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) => {
+  const baseDeDatos = req.body.tableName;
+  const tableName = `planograma_${baseDeDatos}`;
+
   const filePath = path.join(publicDir, req.file.filename);
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
@@ -199,9 +201,64 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
     const usedRange = sheet.usedRange();
     const data = usedRange.value();
     const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
-    
+
+    // Esquema de la tabla
+    const tableSchema = `
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      datos_planograma INT
+      frentes_totales INT
+      parrillas INT
+      planograma INT
+      skus INT
+      volumen INT
+      parrillas_admin INT
+      degradado INT
+      espacio INT
+    `;
+
+    // Comprobar si la tabla existe
+    const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+    const tableExists = await new Promise((resolve, reject) => {
+      pool.query(tableExistsQuery, (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results.length > 0);
+        }
+      });
+    });
+
+    // Crear la tabla si no existe
+    if (!tableExists) {
+      const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
+      await new Promise((resolve, reject) => {
+        pool.query(createTableQuery, (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+
+      // Insertar el nombre de la base de datos en la tabla bases_datos
+      const insertDatabaseNameQuery = `INSERT INTO bases_planograma (nombre_palograma) VALUES (?)`;
+      await new Promise((resolve, reject) => {
+        pool.query(insertDatabaseNameQuery, [baseDeDatos], (err, result) => {
+          if (err) {
+            console.error('Error inserting database name:', err);
+            reject(err);
+          } else {
+            console.log('Database name inserted');
+            resolve(result);
+          }
+        });
+      });
+    }
+
+    // Limpiar la tabla existente (si es necesario)
     await new Promise((resolve, reject) => {
-      pool.query('DELETE FROM data', (err, result) => {
+      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
         if (err) {
           console.error('Error deleting existing records:', err);
           reject(err);
@@ -212,9 +269,10 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
       });
     });
 
+    // Insertar datos en la tabla
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const query = `INSERT INTO data (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
       await new Promise((resolve, reject) => {
         pool.query(query, row, (err, result) => {
           if (err) {
@@ -226,12 +284,14 @@ app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) =
         });
       });
     }
+
     res.status(200).send('File processed successfully');
   } catch (error) {
     console.error('Error processing file:', error);
     res.status(500).send('Error processing file');
   }
 });
+
 
 
 // Login de un usuario
