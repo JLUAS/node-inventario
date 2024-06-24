@@ -81,9 +81,9 @@ handleDisconnect();
 
 app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
   const originalFileName = req.file.originalname;
-  const filePath = path.join(publicDir, req.file.filename);
-  const tableName = `baseDeDatos_${path.parse(originalFileName).name}`;
+  const tableName = `baseDeDatos_${req.body.tableName}`;
 
+  const filePath = path.join(publicDir, req.file.filename);
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
     const sheet = workbook.sheet(0);
