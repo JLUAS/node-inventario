@@ -93,7 +93,7 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
 
     // Esquema de la tabla
     const tableSchema = `
-      id INT,
+      id INT AUTO_INCREMENT PRIMARY KEY,
       marca VARCHAR(255),
       rank VARCHAR(255),
       presentacion VARCHAR(255),
