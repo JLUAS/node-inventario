@@ -111,7 +111,7 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
       percent_availab FLOAT,
       mix_ros FLOAT,
       atw FLOAT,
-      ajuste_frente_minimos FLOAT
+      ajustes_frentes_minimos FLOAT
     `;
 
     // Comprobar si la tabla existe
