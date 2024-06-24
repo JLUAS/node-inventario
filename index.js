@@ -80,7 +80,9 @@ function handleDisconnect() {
 handleDisconnect();
 
 app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
-  const filePath = path.join(publicDir, req.file.filename);
+  const filePath = path.join(__dirname, 'uploads', req.file.filename);
+  const tableName = `baseDeDatos_${path.parse(req.file.filename).name}`;
+
   try {
     const workbook = await XlsxPopulate.fromFileAsync(filePath);
     const sheet = workbook.sheet(0);
@@ -88,6 +90,101 @@ app.post('/upload/excel', upload.single('myFile'), async (req, res) => {
     const data = usedRange.value();
     const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
 
+    // Esquema de la tabla
+    const tableSchema = `
+      id INT,
+      marca VARCHAR(255),
+      rank VARCHAR(255),
+      presentacion VARCHAR(255),
+      distribucion_tiendas VARCHAR(255),
+      frentes VARCHAR(255),
+      vol_ytd FLOAT,
+      ccc VARCHAR(255),
+      peakday_units INT,
+      facings_minimos_pd INT,
+      ros FLOAT,
+      avail3m FLOAT,
+      avail_plaza_oxxo FLOAT,
+      volume_mix VARCHAR(255),
+      industry_packtype VARCHAR(255),
+      percent_availab FLOAT,
+      mix_ros FLOAT,
+      atw FLOAT,
+      ajuste_frente_minimos FLOAT
+    `;
+
+    // Comprobar si la tabla existe
+    const tableExistsQuery = `SHOW TABLES LIKE '${tableName}'`;
+    const tableExists = await new Promise((resolve, reject) => {
+      pool.query(tableExistsQuery, (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results.length > 0);
+        }
+      });
+    });
+
+    // Crear la tabla si no existe
+    if (!tableExists) {
+      const createTableQuery = `CREATE TABLE ${tableName} (${tableSchema})`;
+      await new Promise((resolve, reject) => {
+        pool.query(createTableQuery, (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    }
+
+    // Limpiar la tabla existente (si es necesario)
+    await new Promise((resolve, reject) => {
+      pool.query(`DELETE FROM ${tableName}`, (err, result) => {
+        if (err) {
+          console.error('Error deleting existing records:', err);
+          reject(err);
+        } else {
+          console.log('Existing records deleted');
+          resolve(result);
+        }
+      });
+    });
+
+    // Insertar datos en la tabla
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const query = `INSERT INTO ${tableName} (${headers.join(", ")}) VALUES (${row.map(() => "?").join(", ")})`;
+      await new Promise((resolve, reject) => {
+        pool.query(query, row, (err, result) => {
+          if (err) {
+            console.error(`Error inserting row ${i}:`, err);
+            reject(err);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    }
+
+    res.status(200).send('File processed successfully');
+  } catch (error) {
+    console.error('Error processing file:', error);
+    res.status(500).send('Error processing file');
+  }
+});
+
+
+app.post('/upload/excel/planograma', upload.single('myFile'), async (req, res) => {
+  const filePath = path.join(publicDir, req.file.filename);
+  try {
+    const workbook = await XlsxPopulate.fromFileAsync(filePath);
+    const sheet = workbook.sheet(0);
+    const usedRange = sheet.usedRange();
+    const data = usedRange.value();
+    const headers = data[0].map(header => `\`${header}\``); // Asegurarse de usar backticks para los nombres de columnas
+    
     await new Promise((resolve, reject) => {
       pool.query('DELETE FROM data', (err, result) => {
         if (err) {
@@ -528,4 +625,5 @@ async function main() {
 
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en el puerto ${port}`);
+  main()
 });
