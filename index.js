@@ -511,8 +511,9 @@ app.post('/inventory', (req, res) => {
 
 // Ruta para editar un item en la base de datos
 app.put('/inventory/:id', (req, res) => {
-  const { id } = req.params;
+  const { base, id } = req.params;
   const updatedData = req.body;
+  const tableName = `baseDeDatos_${base}`;
 
   if (!id) {
     console.error('Validation Error: ID is required');
@@ -534,7 +535,7 @@ app.put('/inventory/:id', (req, res) => {
     const values = Object.values(updatedData);
     values.push(id);
 
-    const query = `UPDATE data SET ${fields} WHERE id = ?`;
+    const query = `UPDATE ${tableName} SET ${fields} WHERE id = ?`;
 
     connection.query(query, values, (err, results) => {
       connection.release();
@@ -553,7 +554,8 @@ app.put('/inventory/:id', (req, res) => {
 });
 
 app.delete('/inventory/:id', (req, res) => {
-  const { id } = req.params;
+  const { base, id } = req.params;
+  const tableName = `baseDeDatos_${base}`;
 
   if (!id) {
     console.error('Validation Error: ID is required');
@@ -566,7 +568,7 @@ app.delete('/inventory/:id', (req, res) => {
       return res.status(500).send('Database Connection Error');
     }
 
-    connection.query('DELETE FROM data WHERE id = ?', [id], (err, results) => {
+    connection.query(`DELETE FROM ${tableName} WHERE id = ?`, [id], (err, results) => {
       connection.release();
       if (err) {
         console.error('Error executing query:', err);
