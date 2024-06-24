@@ -514,7 +514,6 @@ app.put('/inventory/:id', (req, res) => {
   const { base, id } = req.params;
   const updatedData = req.body;
   const tableName = `baseDeDatos_${base}`;
-  console.log(tableName)
   if (!id) {
     console.error('Validation Error: ID is required');
     return res.status(400).send('ID is required');
@@ -535,7 +534,7 @@ app.put('/inventory/:id', (req, res) => {
     const values = Object.values(updatedData);
     values.push(id);
 
-    const query = `UPDATE ${tableName} SET ${fields} WHERE id = ?`;
+    const query = `UPDATE ${tableName} SET ${fields} WHERE rank = ?`;
 
     connection.query(query, values, (err, results) => {
       connection.release();
