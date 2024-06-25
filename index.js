@@ -380,7 +380,7 @@ app.get('/datos/:base', (req, res) => {
 });
 
 // Endpoint para obtener todos los datos de una base de datos específica
-app.get('/datos/:planograma', (req, res) => {
+app.get('/datosPlanograma/:planograma', (req, res) => {
   const planograma = req.params.planograma;
   const tableName = `planograma_${planograma}`;
 
