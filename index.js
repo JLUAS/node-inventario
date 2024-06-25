@@ -532,8 +532,8 @@ app.put('/inventory/:base/:frente', (req, res) => {
   const tableName = `planograma_${base}`;
 
   if (!frente) {
-    console.error('Validation Error: Rank is required');
-    return res.status(400).send('Rank is required');
+    console.error('Validation Error: Frente is required');
+    return res.status(400).send('Frente is required');
   }
 
   if (!updatedData || Object.keys(updatedData).length === 0) {
@@ -575,8 +575,8 @@ app.delete('/inventory/:base/:frente', (req, res) => {
   const tableName = `planograma_${base}`;
 
   if (!frente) {
-    console.error('Validation Error: Rank is required');
-    return res.status(400).send('Rank is required');
+    console.error('Validation Error: Frente is required');
+    return res.status(400).send('Frente is required');
   }
 
   pool.getConnection((err, connection) => {
@@ -602,6 +602,7 @@ app.delete('/inventory/:base/:frente', (req, res) => {
     });
   });
 });
+
 
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
