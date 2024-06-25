@@ -526,7 +526,7 @@ app.delete('/inventory/:base/:rank', (req, res) => {
 });
 
 // Ruta para editar un item en la base de datos
-app.put('/inventory/:base/:frente', (req, res) => {
+app.put('/planograma/:base/:frente', (req, res) => {
   const { base, frente } = req.params;
   const updatedData = req.body;
   const tableName = `planograma_${base}`;
@@ -570,7 +570,7 @@ app.put('/inventory/:base/:frente', (req, res) => {
 });
 
 // Ruta para eliminar un item en la base de datos
-app.delete('/inventory/:base/:frente', (req, res) => {
+app.delete('/planograma/:base/:frente', (req, res) => {
   const { base, frente } = req.params;
   const tableName = `planograma_${base}`;
 
