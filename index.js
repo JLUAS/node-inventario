@@ -554,13 +554,13 @@ app.put('/inventory/:base/:rank', (req, res) => {
 });
 
 
-app.delete('/inventory/:id', (req, res) => {
-  const { base, id } = req.params;
+app.delete('/inventory/:base/:rank', (req, res) => {
+  const { base, rank } = req.params;
   const tableName = `baseDeDatos_${base}`;
 
-  if (!id) {
-    console.error('Validation Error: ID is required');
-    return res.status(400).send('ID is required');
+  if (!rank) {
+    console.error('Validation Error: Rank is required');
+    return res.status(400).send('Rank is required');
   }
 
   pool.getConnection((err, connection) => {
@@ -569,7 +569,9 @@ app.delete('/inventory/:id', (req, res) => {
       return res.status(500).send('Database Connection Error');
     }
 
-    connection.query(`DELETE FROM ${tableName} WHERE id = ?`, [id], (err, results) => {
+    const query = `DELETE FROM ${tableName} WHERE rank = ?`;
+
+    connection.query(query, [rank], (err, results) => {
       connection.release();
       if (err) {
         console.error('Error executing query:', err);
@@ -580,10 +582,11 @@ app.delete('/inventory/:id', (req, res) => {
         return res.status(404).send('Item not found');
       }
 
-      res.status(200).send('Item deleted');
+      res.status(200).send('Item deleted successfully');
     });
   });
 });
+
 
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
