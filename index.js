@@ -382,7 +382,7 @@ app.get('/datos/:base', (req, res) => {
 // Endpoint para obtener todos los datos de una base de datos específica
 app.get('/datos/:planograma', (req, res) => {
   const planograma = req.params.planograma;
-  const tableName = `baseDeDatos_${planograma}`;
+  const tableName = `planograma_${planograma}`;
 
   const query = `SELECT * FROM ??`;  // Usando ?? para escapar nombres de tablas
   pool.query(query, [tableName], (err, results) => {
@@ -446,69 +446,6 @@ app.get('/inventory/:username', (req, res) => {
   });
 });
 
-
-// Agregar item a tabla de usuario
-app.post('/inventory/:username', (req, res) => {
-  const username = req.params.username;
-  const { item_name, quantity } = req.body;
-  const userTableName = `inventory_${username}`;
-  pool.getConnection((err, connection) => {
-    connection.query(`INSERT INTO ${userTableName} (item_name, quantity) VALUES (?, ?)`, [item_name, quantity], (err) => {
-      connection.release();
-      if (err) return res.status(500).send(err);
-      res.status(201).send('Item added to inventory');
-    });
-  });
-});
-
-// Agregar item a base principal
-app.post('/inventory', (req, res) => {
-  const { item_name, quantity } = req.body;
-
-  if (!item_name || !quantity) {
-    console.error('Validation Error: Item name and quantity are required');
-    return res.status(400).send('Item name and quantity are required');
-  }
-
-  pool.getConnection((err, connection) => {
-    if (err) {
-      console.error('Database Connection Error:', err);
-      return res.status(500).send('Database Connection Error');
-    }
-
-    connection.query('SELECT quantity FROM data WHERE item_name = ?', [item_name], (err, results) => {
-      if (err) {
-        connection.release();
-        console.error('Database Query Error:', err);
-        return res.status(500).send('Database Query Error');
-      }
-
-      if (results.length > 0) {
-        // Item exists, update quantity
-        const newQuantity = results[0].quantity + quantity;
-        connection.query('UPDATE data SET quantity = ? WHERE item_name = ?', [newQuantity, item_name], (err) => {
-          connection.release();
-          if (err) {
-            console.error('Error executing query:', err);
-            return res.status(500).send('Error executing query');
-          }
-          res.status(200).send('Item quantity updated');
-        });
-      } else {
-        // Item does not exist, insert new record
-        connection.query('INSERT INTO data (item_name, quantity) VALUES (?, ?)', [item_name, quantity], (err) => {
-          connection.release();
-          if (err) {
-            console.error('Error executing query:', err);
-            return res.status(500).send('Error executing query');
-          }
-          res.status(201).send('Item added to inventory');
-        });
-      }
-    });
-  });
-});
-
 // Ruta para editar un item en la base de datos
 app.put('/inventory/:base/:rank', (req, res) => {
   const { base, rank } = req.params;
@@ -553,7 +490,7 @@ app.put('/inventory/:base/:rank', (req, res) => {
   });
 });
 
-
+// Ruta para eliminar un item en la base de datos
 app.delete('/inventory/:base/:rank', (req, res) => {
   const { base, rank } = req.params;
   const tableName = `baseDeDatos_${base}`;
@@ -587,7 +524,83 @@ app.delete('/inventory/:base/:rank', (req, res) => {
   });
 });
 
+// Ruta para editar un item en la base de datos
+app.put('/inventory/:base/:frente', (req, res) => {
+  const { base, frente } = req.params;
+  const updatedData = req.body;
+  const tableName = `planograma_${base}`;
 
+  if (!frente) {
+    console.error('Validation Error: Rank is required');
+    return res.status(400).send('Rank is required');
+  }
+
+  if (!updatedData || Object.keys(updatedData).length === 0) {
+    console.error('Validation Error: No data provided to update');
+    return res.status(400).send('No data provided to update');
+  }
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    const fields = Object.keys(updatedData).map(field => `${field} = ?`).join(', ');
+    const values = Object.values(updatedData);
+    values.push(frente);
+
+    const query = `UPDATE ${tableName} SET ${fields} WHERE frente = ?`;
+
+    connection.query(query, values, (err, results) => {
+      connection.release();
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Item not found');
+      }
+
+      res.status(200).send('Item updated successfully');
+    });
+  });
+});
+
+// Ruta para eliminar un item en la base de datos
+app.delete('/inventory/:base/:frente', (req, res) => {
+  const { base, frente } = req.params;
+  const tableName = `planograma_${base}`;
+
+  if (!frente) {
+    console.error('Validation Error: Rank is required');
+    return res.status(400).send('Rank is required');
+  }
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    const query = `DELETE FROM ${tableName} WHERE frente = ?`;
+
+    connection.query(query, [frente], (err, results) => {
+      connection.release();
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Item not found');
+      }
+
+      res.status(200).send('Item deleted successfully');
+    });
+  });
+});
 
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
