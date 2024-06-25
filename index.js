@@ -588,6 +588,7 @@ app.delete('/inventory/:base/:rank', (req, res) => {
 });
 
 
+
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
   const sql = `SELECT id, username, role FROM users`;
