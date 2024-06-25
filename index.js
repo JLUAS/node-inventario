@@ -381,8 +381,8 @@ app.get('/datos/:base', (req, res) => {
 
 // Endpoint para obtener todos los datos de una base de datos específica
 app.get('/datosPlanograma/:planograma', (req, res) => {
-  const planograma = req.params.base;
-  const tableName = `planograma_${base}`;
+  const planograma = req.params.planograma;
+  const tableName = `planograma_${planograma}`;
 
   const query = `SELECT * FROM ??`;  // Usando ?? para escapar nombres de tablas
   pool.query(query, [tableName], (err, results) => {
@@ -394,6 +394,7 @@ app.get('/datosPlanograma/:planograma', (req, res) => {
     }
   });
 });
+
 
 // Obtener inventario por usuario
 app.get('/inventory/:username', (req, res) => {
