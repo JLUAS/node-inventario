@@ -395,7 +395,6 @@ app.get('/datosPlanograma/:planograma', (req, res) => {
   });
 });
 
-
 // Obtener inventario por usuario
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
@@ -603,7 +602,6 @@ app.delete('/planograma/:base/:frente', (req, res) => {
   });
 });
 
-
 // Endpoint para obtener los usuarios
 app.get('/users', (req, res) => {
   const sql = `SELECT id, username, role FROM users`;
@@ -662,7 +660,7 @@ app.post('/register/admin', async (req, res) => {
 
 // Registro de usuarios
 app.post('/register/user', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, baseDeDatos } = req.body; // baseDeDatos ahora es un array
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -675,49 +673,69 @@ app.post('/register/user', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, 'user'], (err, result) => {
+      connection.query('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, hashedPassword, role], (err, result) => {
         if (err) {
           connection.rollback(() => {
             connection.release();
             return res.status(500).send(err);
           });
         } else {
-          const userTableName = `inventory_${username}`;
+          const createTablesPromises = baseDeDatos.map((dbName, index) => {
+            const userTableName = `${username}_database_${index + 1}`;
+            const createTableQuery = `
+              CREATE TABLE ${userTableName} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                database VARCHAR(255),
+                planograma VARCHAR(255)
+              )
+            `;
+            const insertValuesQuery = `
+              INSERT INTO ${userTableName} (database, planograma)
+              VALUES (?, ?)
+            `;
 
-          connection.query(`CREATE TABLE ${userTableName} LIKE data`, (err) => {
-            if (err) {
-              connection.rollback(() => {
-                connection.release();
-                return res.status(500).send(err);
+            return new Promise((resolve, reject) => {
+              connection.query(createTableQuery, (err) => {
+                if (err) {
+                  return reject(err);
+                }
+                connection.query(insertValuesQuery, [dbName, dbName], (err) => {
+                  if (err) {
+                    return reject(err);
+                  }
+                  resolve();
+                });
               });
-            } else {
-              connection.query(`INSERT INTO ${userTableName} (item_name, quantity) SELECT item_name, quantity FROM data`, (err) => {
+            });
+          });
+
+          Promise.all(createTablesPromises)
+            .then(() => {
+              connection.commit(err => {
                 if (err) {
                   connection.rollback(() => {
                     connection.release();
                     return res.status(500).send(err);
                   });
                 } else {
-                  connection.commit(err => {
-                    if (err) {
-                      connection.rollback(() => {
-                        connection.release();
-                        return res.status(500).send(err);
-                      });
-                    } else {
-                      connection.release();
-                      res.status(201).send('Usuario registrado correctamente');
-                    }
-                  });
+                  connection.release();
+                  res.status(201).send('Usuario registrado y tablas creadas correctamente');
                 }
               });
-            }
-          });
+            })
+            .catch(err => {
+              connection.rollback(() => {
+                connection.release();
+                return res.status(500).send(err);
+              });
+            });
         }
       });
     });
   });
 });
+
+
 
 //hacer post de una base de datos
 async function main() {
