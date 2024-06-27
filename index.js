@@ -660,7 +660,7 @@ app.post('/register/admin', async (req, res) => {
 
 // Registro de usuarios
 app.post('/register/user', async (req, res) => {
-  const { username, password, baseDeDatos } = req.body; // baseDeDatos ahora es un array
+  const { username, password, baseDeDatos } = req.body;
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -680,60 +680,56 @@ app.post('/register/user', async (req, res) => {
             return res.status(500).send(err);
           });
         } else {
-          const createTablesPromises = baseDeDatos.map((dbName, index) => {
-            const userTableName = `${username}_database_${index + 1}`;
-            const createTableQuery = `
-              CREATE TABLE ${userTableName} (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                database VARCHAR(255),
-                planograma VARCHAR(255)
-              )
-            `;
-            const insertValuesQuery = `
-              INSERT INTO ${userTableName} (database, planograma)
-              VALUES (?, ?)
-            `;
+          const userTableName = `${username}_database`;
 
-            return new Promise((resolve, reject) => {
-              connection.query(createTableQuery, (err) => {
-                if (err) {
-                  return reject(err);
-                }
-                connection.query(insertValuesQuery, [dbName, dbName], (err) => {
-                  if (err) {
-                    return reject(err);
-                  }
-                  resolve();
-                });
+          const createTableQuery = `
+            CREATE TABLE ${userTableName} (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              database VARCHAR(255),
+              planograma VARCHAR(255)
+            )
+          `;
+
+          connection.query(createTableQuery, (err) => {
+            if (err) {
+              connection.rollback(() => {
+                connection.release();
+                return res.status(500).send(err);
               });
-            });
-          });
+            } else {
+              const insertValuesQuery = `
+                INSERT INTO ${userTableName} (database, planograma)
+                VALUES (?, ?)
+              `;
 
-          Promise.all(createTablesPromises)
-            .then(() => {
-              connection.commit(err => {
+              connection.query(insertValuesQuery, [baseDeDatos, baseDeDatos], (err) => {
                 if (err) {
                   connection.rollback(() => {
                     connection.release();
                     return res.status(500).send(err);
                   });
                 } else {
-                  connection.release();
-                  res.status(201).send('Usuario registrado y tablas creadas correctamente');
+                  connection.commit(err => {
+                    if (err) {
+                      connection.rollback(() => {
+                        connection.release();
+                        return res.status(500).send(err);
+                      });
+                    } else {
+                      connection.release();
+                      res.status(201).send('Usuario registrado y tabla creada correctamente');
+                    }
+                  });
                 }
               });
-            })
-            .catch(err => {
-              connection.rollback(() => {
-                connection.release();
-                return res.status(500).send(err);
-              });
-            });
+            }
+          });
         }
       });
     });
   });
 });
+
 
 
 
