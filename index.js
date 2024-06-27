@@ -730,8 +730,50 @@ app.post('/register/user', async (req, res) => {
   });
 });
 
+app.post('/user/add/database', async (req, res) => {
+  const { username, baseDeDatos } = req.body;
+  const userTableName = `${username}_database`;
 
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
 
+    const insertValuesQuery = `
+      INSERT INTO ${userTableName} (database, planograma)
+      VALUES (?, ?)
+    `;
+
+    connection.query(insertValuesQuery, [baseDeDatos, baseDeDatos], (err) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      } else {
+        connection.release();
+        res.status(201).send('Base de datos añadida correctamente');
+      }
+    });
+  });
+});
+
+app.get('/user/databases/:username', (req, res) => {
+  const { username } = req.params;
+  const userTableName = `${username}_database`;
+
+  pool.getConnection((err, connection) => {
+    if (err) return res.status(500).send(err);
+
+    const getDatabasesQuery = `SELECT * FROM ${userTableName}`;
+
+    connection.query(getDatabasesQuery, (err, results) => {
+      if (err) {
+        connection.release();
+        return res.status(500).send(err);
+      } else {
+        connection.release();
+        res.status(200).json(results);
+      }
+    });
+  });
+});
 
 //hacer post de una base de datos
 async function main() {
