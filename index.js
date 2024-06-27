@@ -781,7 +781,7 @@ app.get('/userDatabase/:username', (req, res)=>{
   const userTableName = `${username}_database`;
   pool.getConnection((err, connection) => {
     if(err) return res.status(500).send(err);
-    const getDatabasesQuery = `SELECT database FROM ${username}_database`;
+    const getDatabasesQuery = `SELECT database FROM ${userTableName}`;
 
     connection.query(getDatabasesQuery, (err, results) => {
       if(err){
