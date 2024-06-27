@@ -10,6 +10,7 @@ const authenticateToken = require('./authInterceptor'); // Importar el middlewar
 const XlsxPopulate = require('xlsx-populate')
 const path = require('path');
 const fs = require('fs');
+const Connection = require('mysql/lib/Connection');
 
 dotenv.config({ path: './db.env' });
 
@@ -774,6 +775,26 @@ app.get('/user/databases/:username', (req, res) => {
     });
   });
 });
+
+app.get('/userDatabase/:username', (req, res)=>{
+  const { username } = req.params;
+  const userTableName = `${username}_database`;
+  pool.getConnection((err, connection) => {
+    if(err) return res.status(500).send(err);
+    const getDatabasesQuery = `SELECT * FROM ${username}_database`;
+
+    connection.query(getDatabasesQuery, (err, results) => {
+      if(err){
+        connection.release();
+        return res.status(500).send(err);
+      }else{
+        connection.release();
+        res.status(200).json(results)
+      }
+    })
+  })
+})
+
 
 //hacer post de una base de datos
 async function main() {
