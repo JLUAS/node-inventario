@@ -784,7 +784,7 @@ app.get('/userDatabase/:username/:baseDatos?', (req, res) => {
         }
 
         if (results.length > 0) {
-          const getTableDataQuery = `SELECT * FROM ${userTableName}`;
+          const getTableDataQuery = `SELECT database FROM ${userTableName}`;
           connection.query(getTableDataQuery, (err, results) => {
             connection.release();
             if (err) {
