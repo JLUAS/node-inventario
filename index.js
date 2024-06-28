@@ -765,52 +765,68 @@ app.get('/user/databases/:username', (req, res) => {
   });
 });
 
-app.get('/userDatabase/:username/:baseDatos', (req, res) => {
+app.get('/userDatabase/:username/:baseDatos?', (req, res) => {
   const { username, baseDatos } = req.params;
-  const userTableName = `${username}_${baseDatos}`;
-  const sourceTableName = `baseDeDatos_${baseDatos}`;
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
+    if (baseDatos) {
+      const userTableName = `${username}_${baseDatos}`;
+      const sourceTableName = `baseDeDatos_${baseDatos}`;
 
-    connection.query(checkTableExistsQuery, (err, results) => {
-      if (err) {
-        connection.release();
-        return res.status(500).send(err);
-      }
+      const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
 
-      if (results.length > 0) {
-        const getTableDataQuery = `SELECT * FROM ${userTableName}`;
-        connection.query(getTableDataQuery, (err, results) => {
+      connection.query(checkTableExistsQuery, (err, results) => {
+        if (err) {
           connection.release();
-          if (err) {
-            return res.status(500).send(err);
-          }
-          res.status(200).json(results);
-        });
-      } else {
-        const createTableQuery = `CREATE TABLE ${userTableName} LIKE ${sourceTableName}`;
-        connection.query(createTableQuery, (err) => {
-          if (err) {
-            connection.release();
-            return res.status(500).send(err);
-          }
+          return res.status(500).send(err);
+        }
 
-          const copyTableDataQuery = `INSERT INTO ${userTableName} SELECT * FROM ${sourceTableName}`;
-          connection.query(copyTableDataQuery, (err) => {
+        if (results.length > 0) {
+          const getTableDataQuery = `SELECT * FROM ${userTableName}`;
+          connection.query(getTableDataQuery, (err, results) => {
             connection.release();
             if (err) {
               return res.status(500).send(err);
             }
-            res.status(201).send(`Table ${userTableName} created and data copied successfully`);
+            res.status(200).json(results);
           });
-        });
-      }
-    });
+        } else {
+          const createTableQuery = `CREATE TABLE ${userTableName} LIKE ${sourceTableName}`;
+          connection.query(createTableQuery, (err) => {
+            if (err) {
+              connection.release();
+              return res.status(500).send(err);
+            }
+
+            const copyTableDataQuery = `INSERT INTO ${userTableName} SELECT * FROM ${sourceTableName}`;
+            connection.query(copyTableDataQuery, (err) => {
+              connection.release();
+              if (err) {
+                return res.status(500).send(err);
+              }
+              res.status(201).send(`Table ${userTableName} created and data copied successfully`);
+            });
+          });
+        }
+      });
+    } else {
+      const userTableName = `${username}_database`;
+      const getDatabasesQuery = `SELECT database FROM ${userTableName}`;
+
+      connection.query(getDatabasesQuery, (err, results) => {
+        if (err) {
+          connection.release();
+          return res.status(500).send(err);
+        }
+        connection.release();
+        res.status(200).json(results);
+      });
+    }
   });
 });
+
 
 async function main() {
   try {
