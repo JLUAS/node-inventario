@@ -288,53 +288,16 @@ app.post('/login', (req, res) => {
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
     connection.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
-      if (err) {
-        connection.release();
-        return res.status(500).send(err);
-      }
+      connection.release();
+      if (err) return res.status(500).send(err);
       if (!results.length || !(await bcrypt.compare(password, results[0].password))) {
-        connection.release();
         return res.status(401).send('Nombre de usuario o contraseña incorrecta');
       }
       if (results[0].role !== 'user') {
-        connection.release();
         return res.status(403).send('Acceso denegado');
       }
-
       const token = jwt.sign({ id: results[0].id, role: results[0].role }, 'secretkey', { expiresIn: '8h' });
-
-      const userTableName = `${username}_baseDatos`;
-
-      const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
-      connection.query(checkTableExistsQuery, (err, tableResults) => {
-        if (err) {
-          connection.release();
-          return res.status(500).send(err);
-        }
-
-        if (tableResults.length === 0) {
-          // La tabla no existe, crearla copiando la estructura y datos de baseDeDatos_baseDatos
-          const createTableQuery = `CREATE TABLE ${userTableName} LIKE baseDeDatos_baseDatos`;
-          connection.query(createTableQuery, (err) => {
-            if (err) {
-              connection.release();
-              return res.status(500).send(err);
-            }
-
-            const copyTableDataQuery = `INSERT INTO ${userTableName} SELECT * FROM baseDeDatos_baseDatos`;
-            connection.query(copyTableDataQuery, (err) => {
-              connection.release();
-              if (err) {
-                return res.status(500).send(err);
-              }
-              res.status(200).send({ token });
-            });
-          });
-        } else {
-          connection.release();
-          res.status(200).send({ token });
-        }
-      });
+      res.status(200).send({ token });
     });
   });
 });
@@ -801,25 +764,6 @@ app.get('/user/databases/:username', (req, res) => {
     });
   });
 });
-
-app.get('/userDatabase/:username', (req, res)=>{
-  const { username } = req.params;
-  const userTableName = `${username}_database`;
-  pool.getConnection((err, connection) => {
-    if(err) return res.status(500).send(err);
-    const getDatabasesQuery = `SELECT database FROM ${userTableName}`;
-
-    connection.query(getDatabasesQuery, (err, results) => {
-      if(err){
-        connection.release();
-        return res.status(500).send(err);
-      }else{
-        connection.release();
-        res.status(200).json(results)
-      }
-    })
-  })
-})
 
 app.get('/userDatabase/:username/:baseDatos', (req, res) => {
   const { username, baseDatos } = req.params;
