@@ -349,6 +349,21 @@ app.get('/planogramas', (req, res) => {
   });
 });
 
+app.get('/datosUser/:base/:username', (req, res) => {
+  const base = req.params.base;
+  const tableName = `${username}_${base}`;
+
+  const query = `SELECT * FROM ??`;
+  pool.query(query, [tableName], (err, results) => {
+    if (err) {
+      console.error(`Error fetching data from ${tableName}:`, err);
+      res.status(500).send(`Error fetching data from ${tableName}`);
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 app.get('/datos/:base', (req, res) => {
   const base = req.params.base;
   const tableName = `baseDeDatos_${base}`;
@@ -809,7 +824,6 @@ app.post('/user/add/database', async (req, res) => {
 app.get('/user/databases/:username', (req, res) => {
   const { username } = req.params;
   const userTableName = `${username}_database`;
-
 
 
   pool.getConnection((err, connection) => {
