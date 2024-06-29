@@ -11,6 +11,7 @@ const XlsxPopulate = require('xlsx-populate');
 const path = require('path');
 const fs = require('fs');
 const Connection = require('mysql/lib/Connection');
+const { use } = require('express/lib/application');
 
 dotenv.config({ path: './db.env' });
 
@@ -424,7 +425,7 @@ app.get('/inventory/:username', (req, res) => {
     });
   });
 });
-
+// Editar base de datos como admin
 app.put('/inventory/:base/:rank', (req, res) => {
   const { base, rank } = req.params;
   const updatedData = req.body;
@@ -467,7 +468,7 @@ app.put('/inventory/:base/:rank', (req, res) => {
     });
   });
 });
-
+// Eliminar base de datos como admin
 app.delete('/inventory/:base/:rank', (req, res) => {
   const { base, rank } = req.params;
   const tableName = `baseDeDatos_${base}`;
@@ -500,7 +501,7 @@ app.delete('/inventory/:base/:rank', (req, res) => {
     });
   });
 });
-
+// Editar base de datos como admin
 app.put('/planograma/:base/:frente', (req, res) => {
   const { base, frente } = req.params;
   const updatedData = req.body;
@@ -543,7 +544,7 @@ app.put('/planograma/:base/:frente', (req, res) => {
     });
   });
 });
-
+// Eliminar base de datos como admin
 app.delete('/planograma/:base/:frente', (req, res) => {
   const { base, frente } = req.params;
   const tableName = `planograma_${base}`;
@@ -573,6 +574,49 @@ app.delete('/planograma/:base/:frente', (req, res) => {
       }
 
       res.status(200).send('Item deleted successfully');
+    });
+  });
+});
+// Editar base de datos de usuario
+app.put('/inventory/:base/:rank:username', (req, res) => {
+  const { base, rank, username } = req.params;
+  const updatedData = req.body;
+  const tableName = `${username}_${base}`;
+
+  if (!rank) {
+    console.error('Validation Error: Rank is required');
+    return res.status(400).send('Rank is required');
+  }
+
+  if (!updatedData || Object.keys(updatedData).length === 0) {
+    console.error('Validation Error: No data provided to update');
+    return res.status(400).send('No data provided to update');
+  }
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    const fields = Object.keys(updatedData).map(field => `${field} = ?`).join(', ');
+    const values = Object.values(updatedData);
+    values.push(rank);
+
+    const query = `UPDATE ${tableName} SET ${fields} WHERE rank = ?`;
+
+    connection.query(query, values, (err, results) => {
+      connection.release();
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).send('Item not found');
+      }
+
+      res.status(200).send('Item updated successfully');
     });
   });
 });
