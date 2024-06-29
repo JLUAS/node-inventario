@@ -765,7 +765,7 @@ app.get('/user/databases/:username', (req, res) => {
   });
 });
 
-app.get('/userDatabase/:username/:baseDatos?', (req, res) => {
+app.get('/userDatabase/:username/:baseDatos', (req, res) => {
   const { username, baseDatos } = req.params;
 
   pool.getConnection((err, connection) => {
