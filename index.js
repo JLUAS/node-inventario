@@ -704,6 +704,7 @@ app.post('/register/user', async (req, res) => {
 
 app.post('/user/add/database', async (req, res) => {
   const { username, baseDeDatos } = req.body;
+  const userDatabases =`${username}_database`;
   const userTableName = `${username}_${baseDeDatos}`;
   const sourceTableName = `baseDeDatos_${baseDeDatos}`;
 
@@ -736,6 +737,7 @@ app.post('/user/add/database', async (req, res) => {
             res.status(201).send('Base de datos añadida y tabla creada correctamente');
           });
         });
+          const addToUserDatabase = `INSERT INTO ${userDatabases} `
       } else {
         connection.release();
         res.status(400).send('La base de datos ya existe');
@@ -747,6 +749,8 @@ app.post('/user/add/database', async (req, res) => {
 app.get('/user/databases/:username', (req, res) => {
   const { username } = req.params;
   const userTableName = `${username}_database`;
+
+
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
@@ -776,7 +780,11 @@ app.get('/userDatabase/:username/:baseDatos', (req, res) => {
       const sourceTableName = `baseDeDatos_${baseDatos}`;
 
       const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
-
+      connection.query(`INSERT INTO ${userTableName}(database, planograma) values (?, ?), [baseDatos, baseDatos]`, (err, result) =>{
+        if(err){
+          return res.status(500).send(err);
+        }
+       });
       connection.query(checkTableExistsQuery, (err, results) => {
         if (err) {
           connection.release();
@@ -798,16 +806,7 @@ app.get('/userDatabase/:username/:baseDatos', (req, res) => {
             if (err) {
               connection.release();
               return res.status(500).send(err);
-            }
-
-            const copyTableDataQuery = `INSERT INTO ${userTableName} SELECT * FROM ${sourceTableName}`;
-            connection.query(copyTableDataQuery, (err) => {
-              connection.release();
-              if (err) {
-                return res.status(500).send(err);
-              }
-              res.status(201).send(`Table ${userTableName} created and data copied successfully`);
-            });
+            }  
           });
         }
       });
