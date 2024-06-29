@@ -711,7 +711,7 @@ app.post('/user/add/database', async (req, res) => {
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    connection.query(`INSERT INTO ${userDatabases} (database, planograma) VALUES (?, ?)`, [baseDatos, baseDatos], (err, result) => {
+    connection.query(`INSERT INTO ${userDatabases} (database, planograma) VALUES (?, ?)`, [baseDeDatos, baseDeDatos], (err, result) => {
       if (err) {
         return res.status(500).send(err);
       }
