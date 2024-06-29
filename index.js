@@ -350,7 +350,7 @@ app.get('/planogramas', (req, res) => {
 });
 
 app.get('/datosUser/:base/:username', (req, res) => {
-  const base = req.params.base;
+  const {base, username} = req.params;
   const tableName = `${username}_${base}`;
 
   const query = `SELECT * FROM ??`;
