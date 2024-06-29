@@ -620,6 +620,30 @@ app.put('/inventory/:base/:rank/:username', (req, res) => {
     });
   });
 });
+//Obtener información de base de datos de usuario
+app.get('/user/:base/:username', (req, res) => {
+  const { username, base } = req.params;
+  const tableName = `${username}_${base}`;
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('Database Connection Error:', err);
+      return res.status(500).send('Database Connection Error');
+    }
+
+    const query = `SELECT * FROM ${tableName}`;
+
+    connection.query(query, (err, results) => {
+      connection.release();
+      if (err) {
+        console.error('Error executing query:', err);
+        return res.status(500).send('Error executing query');
+      }
+
+      res.status(200).json(results);
+    });
+  });
+});
 
 
 app.get('/users', (req, res) => {
