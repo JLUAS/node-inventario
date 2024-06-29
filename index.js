@@ -780,11 +780,13 @@ app.get('/userDatabase/:username/:baseDatos', (req, res) => {
       const sourceTableName = `baseDeDatos_${baseDatos}`;
 
       const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
-      connection.query(`INSERT INTO ${userTableName}(database, planograma) values (?, ?), [baseDatos, baseDatos]`, (err, result) =>{
-        if(err){
+      connection.query(`INSERT INTO ${userTableName} (database, planograma) VALUES (?, ?)`, [baseDatos, baseDatos], (err, result) => {
+        if (err) {
           return res.status(500).send(err);
         }
-       });
+        // Lógica adicional después de la inserción exitosa si es necesario
+      });
+      
       connection.query(checkTableExistsQuery, (err, results) => {
         if (err) {
           connection.release();
