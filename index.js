@@ -652,6 +652,16 @@ app.post('/register/user', async (req, res) => {
             return res.status(500).send(err);
           });
         } else {
+          const userDatabaseName =  `${username}_${baseDeDatos}`;
+          const sourceTableName =  `baseDeDatos_${baseDeDatos}`;
+
+          connection.query(`CREATE TABLE ${userDatabaseName} LIKE ${sourceTableName}`, (err, result)=>{
+            if(err){
+              return res.status(500).send(err);
+            }
+          })
+
+
           const userTableName = `${username}_database`;
 
           const createTableQuery = `
