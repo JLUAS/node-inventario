@@ -578,7 +578,7 @@ app.delete('/planograma/:base/:frente', (req, res) => {
   });
 });
 // Editar base de datos de usuario
-app.put('/inventory/:base/:rank:username', (req, res) => {
+app.put('/inventory/:base/:rank/:username', (req, res) => {
   const { base, rank, username } = req.params;
   const updatedData = req.body;
   const tableName = `${username}_${base}`;
