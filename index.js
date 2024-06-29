@@ -621,6 +621,7 @@ app.put('/inventory/:base/:rank/:username', (req, res) => {
   });
 });
 
+
 app.get('/users', (req, res) => {
   const sql = `SELECT id, username, role FROM users`;
   pool.getConnection((err, connection) => {
