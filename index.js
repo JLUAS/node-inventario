@@ -711,6 +711,60 @@ app.post('/register/user', async (req, res) => {
             return res.status(500).send(err);
           });
         } else {
+          const userDatabaseName =  `${username}_${baseDeDatos}`;
+          const sourceTableName =  `baseDeDatos_${baseDeDatos}`;
+
+          connection.query(`CREATE TABLE ${userDatabaseName} LIKE ${sourceTableName}`, (err, result)=>{
+            if(err){
+              return res.status(500).send(err);
+            }
+          })
+
+
+          const userTableName = `${username}_database`;
+
+          const createTableQuery = `
+            CREATE TABLE ${userTableName} (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              database VARCHAR(255),
+              planograma VARCHAR(255)
+            )
+          `;
+
+          connection.query(createTableQuery, (err) => {
+            if (err) {
+              connection.rollback(() => {
+                connection.release();
+                return res.status(500).send(err);
+              });
+            } else {
+              const insertValuesQuery = `
+                INSERT INTO ${userTableName} (database, planograma)
+                VALUES (?, ?)
+              `;
+
+              connection.query(insertValuesQuery, [baseDeDatos, baseDeDatos], (err) => {
+                if (err) {
+                  connection.rollback(() => {
+                    connection.release();
+                    return res.status(500).send(err);
+                  });
+                } else {
+                  connection.commit(err => {
+                    if (err) {
+                      connection.rollback(() => {
+                        connection.release();
+                        return res.status(500).send(err);
+                      });
+                    } else {
+                      connection.release();
+                      res.status(201).send('Usuario registrado y tabla creada correctamente');
+                    }
+                  });
+                }
+              });
+            }
+          });
         }
       });
     });
