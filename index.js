@@ -597,7 +597,12 @@ app.put('/inventoryUser/:base/:rank/:username', (req, res) => {
   const { base, rank, username } = req.params;
   const updatedData = req.body;
   const tableName = `${username}_${base}`;
-
+  console.log('Datos recibidos:', {
+    base,
+    rank,
+    username,
+    updatedData
+  });
   if (!rank) {
     console.error('Validation Error: Rank is required');
     return res.status(400).send('Rank is required');
