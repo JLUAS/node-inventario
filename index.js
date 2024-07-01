@@ -793,7 +793,7 @@ app.post('/user/add/database', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      if (results.length === 0) {
+      
         // La tabla no existe, crearla copiando la estructura y datos de baseDeDatos_baseDatos
         const createTableQuery = `CREATE TABLE ${userTableName} LIKE ${sourceTableName}`;
         connection.query(createTableQuery, (err) => {
@@ -813,10 +813,7 @@ app.post('/user/add/database', async (req, res) => {
           });
         });
           const addToUserDatabase = `INSERT INTO ${userDatabases} `
-      } else {
-        connection.release();
-        res.status(400).send('La base de datos ya existe');
-      }
+    
     });
   });
 });
