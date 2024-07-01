@@ -691,7 +691,7 @@ app.post('/register/admin', async (req, res) => {
 });
 
 app.post('/register/user', async (req, res) => {
-  const { username, password, baseDeDatos } = req.body;
+  const { username, password } = req.body;
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -711,60 +711,6 @@ app.post('/register/user', async (req, res) => {
             return res.status(500).send(err);
           });
         } else {
-          const userDatabaseName =  `${username}_${baseDeDatos}`;
-          const sourceTableName =  `baseDeDatos_${baseDeDatos}`;
-
-          connection.query(`CREATE TABLE ${userDatabaseName} LIKE ${sourceTableName}`, (err, result)=>{
-            if(err){
-              return res.status(500).send(err);
-            }
-          })
-
-
-          const userTableName = `${username}_database`;
-
-          const createTableQuery = `
-            CREATE TABLE ${userTableName} (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              database VARCHAR(255),
-              planograma VARCHAR(255)
-            )
-          `;
-
-          connection.query(createTableQuery, (err) => {
-            if (err) {
-              connection.rollback(() => {
-                connection.release();
-                return res.status(500).send(err);
-              });
-            } else {
-              const insertValuesQuery = `
-                INSERT INTO ${userTableName} (database, planograma)
-                VALUES (?, ?)
-              `;
-
-              connection.query(insertValuesQuery, [baseDeDatos, baseDeDatos], (err) => {
-                if (err) {
-                  connection.rollback(() => {
-                    connection.release();
-                    return res.status(500).send(err);
-                  });
-                } else {
-                  connection.commit(err => {
-                    if (err) {
-                      connection.rollback(() => {
-                        connection.release();
-                        return res.status(500).send(err);
-                      });
-                    } else {
-                      connection.release();
-                      res.status(201).send('Usuario registrado y tabla creada correctamente');
-                    }
-                  });
-                }
-              });
-            }
-          });
         }
       });
     });
@@ -773,19 +719,13 @@ app.post('/register/user', async (req, res) => {
 
 app.post('/user/add/database', async (req, res) => {
   const { username, baseDeDatos } = req.body;
-  const userDatabases =`${username}_database`;
+  const userDatabases = `${username}_database`;
   const userTableName = `${username}_${baseDeDatos}`;
   const sourceTableName = `baseDeDatos_${baseDeDatos}`;
 
   pool.getConnection((err, connection) => {
     if (err) return res.status(500).send(err);
 
-    connection.query(`INSERT INTO ${userDatabases} (database, planograma) VALUES (?, ?)`, [baseDeDatos, baseDeDatos], (err, result) => {
-      if (err) {
-        return res.status(500).send(err);
-      }
-      // Lógica adicional después de la inserción exitosa si es necesario
-    });
     const checkTableExistsQuery = `SHOW TABLES LIKE '${userTableName}'`;
     connection.query(checkTableExistsQuery, (err, results) => {
       if (err) {
@@ -793,7 +733,7 @@ app.post('/user/add/database', async (req, res) => {
         return res.status(500).send(err);
       }
 
-      
+      if (results.length === 0) {
         // La tabla no existe, crearla copiando la estructura y datos de baseDeDatos_baseDatos
         const createTableQuery = `CREATE TABLE ${userTableName} LIKE ${sourceTableName}`;
         connection.query(createTableQuery, (err) => {
@@ -808,12 +748,27 @@ app.post('/user/add/database', async (req, res) => {
               connection.release();
               return res.status(500).send(err);
             }
-            connection.release();
-            res.status(201).send('Base de datos añadida y tabla creada correctamente');
+
+            // Ahora inserta los valores en userDatabases
+            connection.query(`INSERT INTO ${userDatabases} (database, planograma) VALUES (?, ?)`, [baseDeDatos, baseDeDatos], (err, result) => {
+              connection.release();
+              if (err) {
+                return res.status(500).send(err);
+              }
+              res.status(201).send('Base de datos añadida y tabla creada correctamente');
+            });
           });
         });
-          const addToUserDatabase = `INSERT INTO ${userDatabases} `
-    
+      } else {
+        // La tabla ya existe, solo insertar en userDatabases
+        connection.query(`INSERT INTO ${userDatabases} (database, planograma) VALUES (?, ?)`, [baseDeDatos, baseDeDatos], (err, result) => {
+          connection.release();
+          if (err) {
+            return res.status(500).send(err);
+          }
+          res.status(201).send('Base de datos añadida correctamente');
+        });
+      }
     });
   });
 });
