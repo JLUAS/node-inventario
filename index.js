@@ -691,7 +691,7 @@ app.post('/register/admin', async (req, res) => {
 });
 
 app.post('/register/user', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, baseDeDatos } = req.body;
   const role = 'user';
   const hashedPassword = await bcrypt.hash(password, 10);
 
