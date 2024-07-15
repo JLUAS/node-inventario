@@ -324,7 +324,7 @@ app.post('/admin', (req, res) => {
 });
 
 app.get('/bases-datos', (req, res) => {
-  const query = 'SELECT nombre_base_datos FROM bases_datos';
+  const query = "SELECT nombre_base_datos FROM bases_datos WHERE nombre_base_datos != 'created'";
   
   pool.query(query, (err, results) => {
     if (err) {
