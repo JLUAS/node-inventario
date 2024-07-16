@@ -408,7 +408,7 @@ app.get('/datosPlanogramaUser/planogramas/:planograma', (req, res) => {
     }
   });
 });
-app.get('/datosDegradadoUser/degraados/:planograma', (req, res) => {
+app.get('/datosDegradadoUser/degradados/:planograma', (req, res) => {
   const planograma = req.params.planograma;
   const tableName = `planograma_${planograma}`;
 
