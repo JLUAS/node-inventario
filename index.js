@@ -394,6 +394,35 @@ app.get('/datosPlanograma/:planograma', (req, res) => {
   });
 });
 
+app.get('/datosPlanogramaUser/planogramas/:planograma', (req, res) => {
+  const planograma = req.params.planograma;
+  const tableName = `planograma_${planograma}`;
+
+  const query = `SELECT planograma FROM ??`;
+  pool.query(query, [tableName], (err, results) => {
+    if (err) {
+      console.error(`Error fetching data from ${tableName}:`, err);
+      res.status(500).send(`Error fetching data from ${tableName}`);
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+app.get('/datosPlanogramaUser/degraados/:planograma', (req, res) => {
+  const planograma = req.params.planograma;
+  const tableName = `planograma_${planograma}`;
+
+  const query = `SELECT degradado FROM ??`;
+  pool.query(query, [tableName], (err, results) => {
+    if (err) {
+      console.error(`Error fetching data from ${tableName}:`, err);
+      res.status(500).send(`Error fetching data from ${tableName}`);
+    } else {
+      res.status(200).json(results);
+    }
+  });
+});
+
 app.get('/inventory/:username', (req, res) => {
   const username = req.params.username;
   const userTableName = `inventory_${username}`;
