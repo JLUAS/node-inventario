@@ -18,7 +18,10 @@ const options = {
   cert: fs.readFileSync('/etc/letsencrypt/live/srv540814.hstgr.cloud/fullchain.pem')
 };
 dotenv.config({ path: './db.env' });
-
+const corsOptions = {
+  origin: 'https://srv540814.hstgr.cloud',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
 const app = express();
 
 // Crear el directorio `public` si no existe
@@ -41,7 +44,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 const port = process.env.PORT || 3000;
 
