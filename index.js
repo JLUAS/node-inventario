@@ -999,6 +999,6 @@ async function main() {
   }
 }
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+https.createServer(options, app).listen(3000, () => {
+  console.log('HTTPS Server running on port 3000');
 });
