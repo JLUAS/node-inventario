@@ -12,16 +12,9 @@ const path = require('path');
 const fs = require('fs');
 const Connection = require('mysql/lib/Connection');
 const { use } = require('express/lib/application');
-const https = require('https');
-const options = {
-  key: fs.readFileSync('/etc/letsencrypt/live/srv540814.hstgr.cloud/privkey.pem'),
-  cert: fs.readFileSync('/etc/letsencrypt/live/srv540814.hstgr.cloud/fullchain.pem')
-};
+
 dotenv.config({ path: './db.env' });
-const corsOptions = {
-  origin: 'https://intgamestudio.com',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-};
+
 const app = express();
 
 // Crear el directorio `public` si no existe
@@ -999,6 +992,6 @@ async function main() {
   }
 }
 
-https.createServer(options, app).listen(3000, () => {
-  console.log('HTTPS Server running on port 3000');
+app.listen(port, () => {
+  console.log(`Servidor ejecutándose en el puerto ${port}`);
 });
