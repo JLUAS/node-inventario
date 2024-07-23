@@ -12,7 +12,11 @@ const path = require('path');
 const fs = require('fs');
 const Connection = require('mysql/lib/Connection');
 const { use } = require('express/lib/application');
-
+const https = require('https');
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/srv540814.hstgr.cloud/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/srv540814.hstgr.cloud/fullchain.pem')
+};
 dotenv.config({ path: './db.env' });
 
 const app = express();
@@ -992,6 +996,6 @@ async function main() {
   }
 }
 
-app.listen(port, () => {
-  console.log(`Servidor ejecutándose en el puerto ${port}`);
+https.createServer(options, app).listen(3000, () => {
+  console.log('HTTPS Server running on port 3000');
 });
