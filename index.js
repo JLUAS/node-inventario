@@ -19,7 +19,7 @@ const options = {
 };
 dotenv.config({ path: './db.env' });
 const corsOptions = {
-  origin: 'https://srv540814.hstgr.cloud',
+  origin: 'https://intgamestudio.com',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 const app = express();
@@ -44,7 +44,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-app.use(cors(corsOptions));
+app.use(cors());
 
 const port = process.env.PORT || 3000;
 
