@@ -394,11 +394,11 @@ app.get('/datosPlanograma/:planograma', (req, res) => {
   });
 });
 
-app.get('/datosPlanogramaUser/planogramas/:planograma', (req, res) => {
+app.get('/datosFrentesTotalesUser/planogramas/:planograma', (req, res) => {
   const planograma = req.params.planograma;
   const tableName = `planograma_${planograma}`;
 
-  const query = `SELECT planograma FROM ??`;
+  const query = `SELECT frentes_totales FROM ??`;
   pool.query(query, [tableName], (err, results) => {
     if (err) {
       console.error(`Error fetching data from ${tableName}:`, err);
