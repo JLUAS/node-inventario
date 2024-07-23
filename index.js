@@ -19,7 +19,7 @@ const options = {
 };
 dotenv.config({ path: './db.env' });
 const corsOptions = {
-  origin: 'https://intgamestudio.com',
+  origin: 'https://srv540814.hstgr.cloud',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 const app = express();
